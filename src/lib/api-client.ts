@@ -1,4 +1,7 @@
+import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth-store";
+import { isAccessTokenError } from "@/utils/is-auth-error";
+import { logApiError } from "@/utils/log-api-error";
 import { create, type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 import type { ApiResponse } from "@/types/api-types";
@@ -20,6 +23,13 @@ type RefreshTokensData = {
   accessToken: string;
 };
 
+// Signing out without clearing the cache leaves the previous user's data sitting
+// in TanStack Query, ready to flash on screen at the next sign-in.
+const endSession = async () => {
+  await useAuthStore.getState().signOut();
+  queryClient.clear();
+};
+
 // De-dupes concurrent 401s behind a single in-flight refresh call.
 let refreshPromise: Promise<string> | null = null;
 
@@ -37,10 +47,11 @@ const refreshAccessToken = async (refreshToken: string): Promise<string> => {
 };
 
 apiClient.interceptors.request.use((config) => {
-  const { accessToken } = useAuthStore.getState();
+  const { accessToken, pendingAccessToken } = useAuthStore.getState();
+  const token = accessToken ?? pendingAccessToken;
 
-  if (accessToken) {
-    config.headers.set("Authorization", accessToken);
+  if (token) {
+    config.headers.set("Authorization", token);
   }
 
   return config;
@@ -49,17 +60,19 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    logApiError(error);
+
     const originalRequest = error.config as RetryableConfig | undefined;
     const isAuthEndpoint = originalRequest?.url?.includes("/auth/");
 
-    if (error.response?.status !== 401 || !originalRequest || originalRequest._retry || isAuthEndpoint) {
+    if (!isAccessTokenError(error) || !originalRequest || originalRequest._retry || isAuthEndpoint) {
       return Promise.reject(error);
     }
 
     const { refreshToken } = useAuthStore.getState();
 
     if (!refreshToken) {
-      await useAuthStore.getState().signOut();
+      await endSession();
       return Promise.reject(error);
     }
 
@@ -74,7 +87,10 @@ apiClient.interceptors.response.use(
       originalRequest.headers.set("Authorization", newAccessToken);
       return apiClient(originalRequest);
     } catch (refreshError) {
-      await useAuthStore.getState().signOut();
+      // The refresh token itself is expired/invalid (the backend answers 403
+      // "Invalid Refresh Token"). Nothing left to recover with — end the session.
+      logApiError(refreshError);
+      await endSession();
       return Promise.reject(refreshError);
     }
   }

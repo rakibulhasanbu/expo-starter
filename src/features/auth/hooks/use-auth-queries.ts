@@ -16,7 +16,18 @@ export const useCurrentUserQuery = () => {
   return useQuery({
     queryKey: authKeys.me(),
     queryFn: fetchCurrentUser,
-    select: (data) => data.data,
+    select: (data) => data.data.user,
+    enabled: status === AuthStatus.Authenticated,
+  });
+};
+
+export const useIsPinExistQuery = () => {
+  const status = useAuthStore((state) => state.status);
+
+  return useQuery({
+    queryKey: authKeys.me(),
+    queryFn: fetchCurrentUser,
+    select: (data) => data.data.isPinExist,
     enabled: status === AuthStatus.Authenticated,
   });
 };

@@ -43,6 +43,17 @@ module.exports = {
           DEFAULT: "hsl(var(--card) / <alpha-value>)",
           foreground: "hsl(var(--card-foreground) / <alpha-value>)",
         },
+        "input-focus-border": "hsl(var(--input-focus-border) / <alpha-value>)",
+        subtitle: "hsl(var(--subtitle) / <alpha-value>)",
+        info: {
+          DEFAULT: "hsl(var(--info) / <alpha-value>)",
+          foreground: "hsl(var(--info-foreground) / <alpha-value>)",
+          background: "hsl(var(--info-background) / <alpha-value>)",
+        },
+      },
+      fontFamily: {
+        "urbanist-medium": ["Urbanist_500Medium"],
+        "urbanist-bold": ["Urbanist_700Bold"],
       },
     },
   },

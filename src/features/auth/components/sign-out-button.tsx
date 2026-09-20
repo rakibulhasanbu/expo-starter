@@ -10,8 +10,8 @@ export const SignOutButton = () => {
   };
 
   return (
-    <Pressable onPress={handleSignOut} className="rounded-lg bg-red-600 px-6 py-3">
-      <Text className="text-center text-base font-medium text-white">Sign Out</Text>
+    <Pressable onPress={handleSignOut} className="rounded-lg bg-destructive px-6 py-3">
+      <Text className="text-center text-base font-medium text-destructive-foreground">Sign Out</Text>
     </Pressable>
   );
 };

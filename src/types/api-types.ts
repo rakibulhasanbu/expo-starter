@@ -20,4 +20,9 @@ export const DEFAULT_PAGE_LIMIT = 10;
 export enum QueryKeys {
   BRANDS = "brands",
   AUTH = "auth",
+  TRANSACTIONS = "transactions",
+  HOME = "home",
+  BILL_PAYMENT = "billPayment",
+  CRYPTO_DEPOSIT = "cryptoDeposit",
+  WITHDRAW = "withdraw",
 }
