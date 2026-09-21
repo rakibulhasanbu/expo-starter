@@ -5,14 +5,19 @@ export type ApiMeta = {
 };
 
 export type ApiResponse<TData> = {
-  statusCode: number;
-  success: boolean;
-  message: string;
   data: TData;
+  meta?: ApiMeta;
 };
 
 export type ApiListResponse<TData> = ApiResponse<TData[]> & {
   meta: ApiMeta;
+};
+
+export type ApiErrorResponse = {
+  statusCode: number;
+  code: string;
+  message: string;
+  details?: unknown[];
 };
 
 export const DEFAULT_PAGE_LIMIT = 10;

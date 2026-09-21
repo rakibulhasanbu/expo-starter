@@ -50,9 +50,6 @@ export const fetchTransactions = async (type?: TransactionType): Promise<ApiList
   const filtered = sortByDateDesc(type ? combined.filter((transaction) => transaction.type === type) : combined);
 
   return {
-    statusCode: 200,
-    success: true,
-    message: "Transactions fetched successfully",
     data: filtered,
     meta: { page: 1, limit: filtered.length, total: filtered.length },
   };
@@ -69,9 +66,6 @@ export const fetchTransactionById = async (id: string): Promise<ApiResponse<Tran
   }
 
   return {
-    statusCode: 200,
-    success: true,
-    message: "Transaction fetched successfully",
     data: transaction,
   };
 };

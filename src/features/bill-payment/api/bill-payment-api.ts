@@ -11,9 +11,6 @@ export const fetchBillCategories = async (): Promise<ApiListResponse<BillCategor
   await delay(SIMULATED_DELAY_MS);
 
   return {
-    statusCode: 200,
-    success: true,
-    message: "Bill categories fetched successfully",
     data: billCategories,
     meta: { page: 1, limit: billCategories.length, total: billCategories.length },
   };

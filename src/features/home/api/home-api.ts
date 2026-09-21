@@ -11,9 +11,6 @@ export const fetchHomeSummary = async (): Promise<ApiResponse<HomeSummary>> => {
   await delay(SIMULATED_DELAY_MS);
 
   return {
-    statusCode: 200,
-    success: true,
-    message: "Home summary fetched successfully",
     data: homeSummary,
   };
 };
