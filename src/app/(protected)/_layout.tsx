@@ -5,7 +5,7 @@ export default function ProtectedLayout() {
   return (
     <>
       <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false, animation: "fade" }} />
     </>
   );
 }

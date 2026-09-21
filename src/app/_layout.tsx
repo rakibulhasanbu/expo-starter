@@ -17,7 +17,7 @@ import { Toast } from "@/components/toast";
 
 if (__DEV__ && Constants.executionEnvironment === ExecutionEnvironment.StoreClient) {
   console.warn(
-    "[dolo] Running inside Expo Go — react-native-reanimated 4 and this app's custom native modules " +
+    "[starter] Running inside Expo Go — react-native-reanimated 4 and this app's custom native modules " +
       "require a development build. Gestures, animations, and bottom sheets will silently fail here. " +
       "Run `npx expo run:android` / `npx expo run:ios` (or an EAS development build) instead."
   );
@@ -35,7 +35,7 @@ export default function RootLayout() {
         <BottomSheetModalProvider>
           <QueryClientProvider client={queryClient}>
             <SplashGate ready={fontsLoaded}>
-              <Stack screenOptions={{ headerShown: false }}>
+              <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
                 <Stack.Screen name="(public)" />
 
                 <Stack.Protected guard={status === AuthStatus.Authenticated}>
