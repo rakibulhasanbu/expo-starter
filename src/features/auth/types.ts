@@ -19,6 +19,7 @@ export type AuthUser = {
   role: UserRole;
   status: UserStatus;
   emailVerifiedAt: string | null;
+  twoFactorEnabled: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -41,7 +42,34 @@ export type SignInPayload = {
   deviceName?: string;
 };
 
-export type SignInResponseData = AuthTokens;
+export type TwoFactorRequiredResponseData = {
+  twoFactorRequired: true;
+  twoFactorToken: string;
+};
+
+export type SignInResponseData = AuthTokens | TwoFactorRequiredResponseData;
+
+export type TwoFactorLoginVerifyPayload = {
+  twoFactorToken: string;
+  code?: string;
+  recoveryCode?: string;
+  deviceType?: string;
+  deviceName?: string;
+};
+
+export type TwoFactorSetupResponseData = {
+  otpauthUrl: string;
+  qrCodeDataUrl: string;
+};
+
+export type TwoFactorEnableResponseData = {
+  recoveryCodes: string[];
+};
+
+export type TwoFactorDisablePayload = {
+  password: string;
+  code: string;
+};
 
 export type RefreshTokenPayload = {
   refreshToken: string;

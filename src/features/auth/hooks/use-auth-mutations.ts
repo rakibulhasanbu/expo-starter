@@ -3,12 +3,17 @@ import { useMutation } from "@tanstack/react-query";
 
 import { queryClient } from "@/lib/query-client";
 
+import type { TwoFactorDisablePayload } from "../types";
 import {
+  disable2fa,
+  enable2fa,
   fetchCurrentUser,
   forgotPassword,
+  login2faVerify,
   logout,
   resendVerification,
   resetPassword,
+  setup2fa,
   signIn,
   signUp,
   verifyEmail,
@@ -28,8 +33,46 @@ export const useSignInMutation = () => {
   return useMutation({
     mutationFn: signIn,
     onSuccess: async (response) => {
+      // signIn can return either a token pair or a twoFactorRequired
+      // challenge — only establish a session in the former case, the
+      // sign-in screen branches on this and handles the 2FA case itself.
+      if ("twoFactorRequired" in response.data) return;
       await establishSession(response.data);
     },
+  });
+};
+
+// Completes the sign-in started by useSignInMutation when the account has
+// 2FA enabled — carries the short-lived twoFactorToken plus either a TOTP
+// code or a recovery code, then establishes the session same as sign-in.
+export const use2faLoginVerifyMutation = () => {
+  return useMutation({
+    mutationFn: login2faVerify,
+    onSuccess: async (response) => {
+      await establishSession(response.data);
+    },
+  });
+};
+
+// Step 1 of enabling 2FA: fetches a fresh TOTP secret (QR + otpauth URL) to
+// scan into an authenticator app.
+export const use2faSetupMutation = () => {
+  return useMutation({
+    mutationFn: setup2fa,
+  });
+};
+
+// Step 2: confirms the user actually set the secret up correctly by
+// submitting a live code; returns one-time recovery codes on success.
+export const use2faEnableMutation = () => {
+  return useMutation({
+    mutationFn: enable2fa,
+  });
+};
+
+export const use2faDisableMutation = () => {
+  return useMutation({
+    mutationFn: (payload: TwoFactorDisablePayload) => disable2fa(payload),
   });
 };
 

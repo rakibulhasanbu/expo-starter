@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { useIsPinExistQuery } from "@/features/auth/hooks/use-auth-queries";
+import { useCurrentUserQuery, useIsPinExistQuery } from "@/features/auth/hooks/use-auth-queries";
 import {
   isPasskeySupported,
   useRegisterPasskeyMutation,
@@ -19,6 +19,7 @@ import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { FingerScanIcon } from "@/components/icons/finger-scan-icon";
 import { KeyIcon } from "@/components/icons/key-icon";
 import { LockIcon } from "@/components/icons/lock-icon";
+import { VerifyBadgeIcon } from "@/components/icons/verify-badge-icon";
 import { Text } from "@/components/text";
 import { ToggleSwitch } from "@/components/toggle-switch";
 
@@ -27,7 +28,9 @@ const DEVICE_NAME =
 
 export default function SecuritySettingsScreen() {
   const { data: isPinExist } = useIsPinExistQuery();
+  const { data: currentUser } = useCurrentUserQuery();
   const showToast = useToastStore((state) => state.show);
+  const isTwoFactorEnabled = currentUser?.twoFactorEnabled ?? false;
 
   const [passkeyEnabled, setPasskeyEnabled] = useState(false);
   const registerPasskey = useRegisterPasskeyMutation();
@@ -93,6 +96,20 @@ export default function SecuritySettingsScreen() {
             icon={<FingerScanIcon size={16} />}
             label="Fingerprint Sign-In"
             right={<ToggleSwitch value={passkeyEnabled} onValueChange={handleToggleBiometrics} />}
+          />
+          <SecurityMenuRow
+            icon={<VerifyBadgeIcon size={16} />}
+            label={
+              isTwoFactorEnabled ? "Two-Factor Authentication (Enabled)" : "Two-Factor Authentication"
+            }
+            right={<ArrowRightIcon size={16} />}
+            onPress={() =>
+              router.push(
+                isTwoFactorEnabled
+                  ? "/security-settings/two-factor/disable"
+                  : "/security-settings/two-factor"
+              )
+            }
           />
         </View>
       </View>

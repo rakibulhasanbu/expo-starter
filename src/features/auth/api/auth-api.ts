@@ -2,6 +2,7 @@ import type { ApiResponse } from "@/types/api-types";
 import { apiClient } from "@/lib/api-client";
 
 import type {
+  AuthTokens,
   ChangePasswordPayload,
   CurrentUserResponseData,
   ForgotPasswordPayload,
@@ -12,6 +13,10 @@ import type {
   SignInResponseData,
   SignUpPayload,
   SignUpResponseData,
+  TwoFactorDisablePayload,
+  TwoFactorEnableResponseData,
+  TwoFactorLoginVerifyPayload,
+  TwoFactorSetupResponseData,
   VerifyEmailPayload,
   VerifyEmailResponseData,
 } from "../types";
@@ -70,4 +75,30 @@ export const fetchCurrentUser = async (): Promise<ApiResponse<CurrentUserRespons
   const { data } = await apiClient.get<ApiResponse<CurrentUserResponseData["user"]>>("/users/me");
 
   return data;
+};
+
+export const login2faVerify = async (
+  payload: TwoFactorLoginVerifyPayload
+): Promise<ApiResponse<AuthTokens>> => {
+  const { data } = await apiClient.post<ApiResponse<AuthTokens>>("/auth/2fa/login-verify", payload);
+
+  return data;
+};
+
+export const setup2fa = async (): Promise<ApiResponse<TwoFactorSetupResponseData>> => {
+  const { data } = await apiClient.post<ApiResponse<TwoFactorSetupResponseData>>("/auth/2fa/setup");
+
+  return data;
+};
+
+export const enable2fa = async (code: string): Promise<ApiResponse<TwoFactorEnableResponseData>> => {
+  const { data } = await apiClient.post<ApiResponse<TwoFactorEnableResponseData>>("/auth/2fa/enable", {
+    code,
+  });
+
+  return data;
+};
+
+export const disable2fa = async (payload: TwoFactorDisablePayload): Promise<void> => {
+  await apiClient.post("/auth/2fa/disable", payload);
 };

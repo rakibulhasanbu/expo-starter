@@ -60,7 +60,16 @@ export default function SignIn() {
 
   const onSubmit = (values: SignInFormValues) => {
     signInMutation.mutate(values, {
-      onSuccess: () => router.replace((redirect ?? "/home") as Href),
+      onSuccess: (response) => {
+        if ("twoFactorRequired" in response.data) {
+          router.push({
+            pathname: "/(auth)/2fa-verify",
+            params: { twoFactorToken: response.data.twoFactorToken },
+          });
+          return;
+        }
+        router.replace((redirect ?? "/home") as Href);
+      },
     });
   };
 
