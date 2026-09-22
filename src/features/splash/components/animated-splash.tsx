@@ -10,11 +10,12 @@ const EXIT_SCALE = 1.06;
 
 type AnimatedSplashProps = {
   visible: boolean;
+  onLayout: () => void;
   onAnimationFinish: () => void;
   onExitComplete: () => void;
 };
 
-export function AnimatedSplash({ visible, onAnimationFinish, onExitComplete }: AnimatedSplashProps) {
+export function AnimatedSplash({ visible, onLayout, onAnimationFinish, onExitComplete }: AnimatedSplashProps) {
   const opacity = useSharedValue(1);
   const scale = useSharedValue(1);
 
@@ -37,6 +38,7 @@ export function AnimatedSplash({ visible, onAnimationFinish, onExitComplete }: A
       className="bg-background items-center justify-center"
       style={[StyleSheet.absoluteFill, animatedStyle]}
       pointerEvents={visible ? "auto" : "none"}
+      onLayout={onLayout}
     >
       <LottieView
         source={logoAnimation}

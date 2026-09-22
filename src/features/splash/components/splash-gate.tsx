@@ -22,7 +22,7 @@ export function SplashGate({ children, ready = true }: SplashGateProps) {
   const [animationFinished, setAnimationFinished] = useState(false);
   const [overlayMounted, setOverlayMounted] = useState(true);
 
-  useEffect(() => {
+  const handleOverlayLayout = useCallback(() => {
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
@@ -44,6 +44,7 @@ export function SplashGate({ children, ready = true }: SplashGateProps) {
       {overlayMounted && (
         <AnimatedSplash
           visible={!shouldExit}
+          onLayout={handleOverlayLayout}
           onAnimationFinish={handleAnimationFinish}
           onExitComplete={handleExitComplete}
         />
