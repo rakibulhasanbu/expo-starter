@@ -12,16 +12,13 @@ import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { CalculatorIcon } from "@/components/icons/calculator-icon";
 import { CustomerSupportIcon } from "@/components/icons/customer-support-icon";
-import { DocumentTextIcon } from "@/components/icons/document-text-icon";
 import { GiftIcon } from "@/components/icons/gift-icon";
 import { InfoCircleIcon } from "@/components/icons/info-circle-icon";
 import { LockIcon } from "@/components/icons/lock-icon";
 import { LogoutIcon } from "@/components/icons/logout-icon";
 import { MoonIcon } from "@/components/icons/moon-icon";
 import { NotificationIcon } from "@/components/icons/notification-icon";
-import { ReceiptIcon } from "@/components/icons/receipt-icon";
 import { SunIcon } from "@/components/icons/sun-icon";
 import { TrashIcon } from "@/components/icons/trash-icon";
 import { Text } from "@/components/text";
@@ -53,20 +50,6 @@ export default function SettingsTab() {
               label="Notifications"
               onPress={() => {
                 router.push("/notifications");
-              }}
-            />
-            <SettingsListItem
-              icon={<ReceiptIcon size={16} />}
-              label="Transaction Limits"
-              onPress={() => {
-                router.push("/transaction-limits");
-              }}
-            />
-            <SettingsListItem
-              icon={<DocumentTextIcon size={16} />}
-              label="Account Statements"
-              onPress={() => {
-                router.push("/account-statements");
               }}
             />
             <SettingsListItem
@@ -106,13 +89,6 @@ export default function SettingsTab() {
               label="Refer and earn"
               onPress={() => {
                 router.push("/refer-and-earn");
-              }}
-            />
-            <SettingsListItem
-              icon={<CalculatorIcon size={16} />}
-              label="Rate Calculator"
-              onPress={() => {
-                router.push("/rate-calculator");
               }}
             />
             <SettingsListItem

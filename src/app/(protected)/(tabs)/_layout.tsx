@@ -5,10 +5,8 @@ import { GlassView, isLiquidGlassAvailable } from "expo-glass-effect";
 import { Tabs } from "expo-router";
 import { View } from "react-native";
 
-import { CardIcon } from "@/components/icons/card-icon";
 import { HomeIcon } from "@/components/icons/home-icon";
 import { SettingIcon } from "@/components/icons/setting-icon";
-import { TransactionMinusIcon } from "@/components/icons/transaction-minus-icon";
 import { PressableScale } from "@/components/pressable-scale";
 import { Text } from "@/components/text";
 
@@ -23,8 +21,6 @@ type TabConfig = {
 /** Drives both the order and the contents of the bar, so neither depends on the navigator. */
 const TABS: TabConfig[] = [
   { name: "home", label: "Home", Icon: HomeIcon },
-  { name: "card", label: "Card", Icon: CardIcon },
-  { name: "transactions", label: "Transactions", Icon: TransactionMinusIcon },
   { name: "settings", label: "Settings", Icon: SettingIcon },
 ];
 
@@ -111,8 +107,6 @@ export default function TabsLayout() {
   return (
     <Tabs tabBar={(props) => <CustomTabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tabs.Screen name="home" />
-      <Tabs.Screen name="card" />
-      <Tabs.Screen name="transactions" />
       <Tabs.Screen name="settings" />
     </Tabs>
   );

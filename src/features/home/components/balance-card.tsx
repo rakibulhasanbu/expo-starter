@@ -15,8 +15,8 @@ const MASKED_BALANCE = "*********";
 type BalanceCardProps = {
   balances: WalletBalance[];
   onPressCurrency: () => void;
-  onPressDeposit: () => void;
-  onPressWithdraw: () => void;
+  onPressDeposit?: () => void;
+  onPressWithdraw?: () => void;
 };
 
 export function BalanceCard({
@@ -68,22 +68,28 @@ export function BalanceCard({
         </View>
       </View>
 
-      <View className="w-full flex-row items-center gap-2">
-        <Pressable
-          onPress={onPressDeposit}
-          className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary px-2 py-3"
-        >
-          <AddIcon size={16} color={primaryForegroundColor} />
-          <Text className="text-sm text-primary-foreground">Deposit</Text>
-        </Pressable>
-        <Pressable
-          onPress={onPressWithdraw}
-          className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-background px-2 py-3"
-        >
-          <SendIcon size={16} />
-          <Text className="text-sm text-foreground">Withdraw</Text>
-        </Pressable>
-      </View>
+      {onPressDeposit || onPressWithdraw ? (
+        <View className="w-full flex-row items-center gap-2">
+          {onPressDeposit ? (
+            <Pressable
+              onPress={onPressDeposit}
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-primary px-2 py-3"
+            >
+              <AddIcon size={16} color={primaryForegroundColor} />
+              <Text className="text-sm text-primary-foreground">Deposit</Text>
+            </Pressable>
+          ) : null}
+          {onPressWithdraw ? (
+            <Pressable
+              onPress={onPressWithdraw}
+              className="flex-1 flex-row items-center justify-center gap-2 rounded-full bg-background px-2 py-3"
+            >
+              <SendIcon size={16} />
+              <Text className="text-sm text-foreground">Withdraw</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }

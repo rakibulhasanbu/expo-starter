@@ -24,6 +24,5 @@ export type HomeCarouselSlide = {
 export type HomeSummary = {
   balances: WalletBalance[];
   kycPercentage: number;
-  utilityBillsIcon: ImageSourcePropType;
   carouselSlides: HomeCarouselSlide[];
 };
