@@ -5,6 +5,7 @@ export type AuthTokens = {
 
 export type UserRole = "USER" | "ADMIN" | "SUPER_ADMIN";
 export type UserStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED";
+export type UserGender = "MALE" | "FEMALE" | "OTHER";
 
 export type AuthUser = {
   id: string;
@@ -13,6 +14,8 @@ export type AuthUser = {
   name: string | null;
   phone: string | null;
   avatarUrl: string | null;
+  dateOfBirth: string | null;
+  gender: UserGender | null;
   role: UserRole;
   status: UserStatus;
   emailVerifiedAt: string | null;
@@ -23,6 +26,7 @@ export type AuthUser = {
 export type SignUpPayload = {
   name?: string;
   email: string;
+  phone?: string;
   password: string;
 };
 

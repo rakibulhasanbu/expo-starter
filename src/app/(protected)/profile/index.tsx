@@ -6,7 +6,7 @@ import { GenderSelectSheet } from "@/features/settings/components/gender-select-
 import { ProfileFormSkeleton } from "@/features/settings/components/profile-form-skeleton";
 import { useUpdateProfileMutation } from "@/features/settings/hooks/use-settings-mutations";
 import { DEFAULT_AVATAR_ID, getAvatarSource } from "@/features/settings/lib/avatars";
-import type { Gender } from "@/features/settings/types";
+import { GENDER_FROM_BACKEND, GENDER_TO_BACKEND, type Gender } from "@/features/settings/types";
 import { useToastStore } from "@/store/toast-store";
 import { cn } from "@/utils/cn";
 import { getErrorMessage } from "@/utils/get-error-message";
@@ -63,10 +63,11 @@ export default function Profile() {
     () => ({
       name: user?.name ?? "",
       email: user?.email ?? "",
-      // Not present on this backend's user model yet.
-      birthDate: null,
-      gender: null,
-      avatarId: user?.avatarUrl ?? DEFAULT_AVATAR_ID,
+      birthDate: user?.dateOfBirth ?? null,
+      gender: user?.gender ? GENDER_FROM_BACKEND[user.gender] : null,
+      // Not a real URL yet — this app only offers a set of built-in avatar images, and the
+      // backend's `avatarUrl` expects an actual URL, so the selection stays local-only for now.
+      avatarId: DEFAULT_AVATAR_ID,
     }),
     [user]
   );
@@ -108,10 +109,8 @@ export default function Profile() {
     updateProfileMutation.mutate(
       {
         name: values.name,
-        email: values.email,
-        birthDate: values.birthDate,
-        gender: values.gender,
-        profileImg: values.avatarId,
+        dateOfBirth: values.birthDate ? values.birthDate.slice(0, 10) : undefined,
+        gender: values.gender ? GENDER_TO_BACKEND[values.gender] : undefined,
       },
       {
         onSuccess: () => {
@@ -183,7 +182,8 @@ export default function Profile() {
                 label="Email"
                 autoCapitalize="none"
                 keyboardType="email-address"
-                className="rounded-full border border-muted bg-transparent"
+                editable={false}
+                className="rounded-full border border-muted bg-transparent opacity-60"
               />
 
               <View className="gap-2">

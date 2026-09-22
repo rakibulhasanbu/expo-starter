@@ -1,6 +1,5 @@
 import { TermsCheckbox } from "@/features/auth/components/terms-checkbox";
 import { useSignUpMutation } from "@/features/auth/hooks/use-auth-mutations";
-import { useAuthStore } from "@/store/auth-store";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,11 +23,8 @@ import { Text } from "@/components/text";
 const signUpSchema = z.object({
   name: z.string().min(3, "Name is required"),
   email: z.string().min(5, "Email is required").email("Enter a valid email"),
-  dialCode: z.string().min(1, "Select a country code"),
-  phone: z
-    .string()
-    .min(1, "Phone number is required")
-    .regex(/^\d{7,15}$/, "Enter a valid phone number"),
+  phone: z.string().optional(),
+  phoneCountryCode: z.string(),
   password: z.string().min(8, "Password must be at least 8 characters"),
   termsAccepted: z.boolean().refine((value) => value === true, {
     message: "You must accept the Terms and Conditions",
@@ -48,9 +44,10 @@ export default function SignUp() {
     resolver: zodResolver(signUpSchema),
     mode: "onChange",
     defaultValues: {
+      name: "",
       email: "",
-      dialCode: "+234",
       phone: "",
+      phoneCountryCode: "+1",
       password: "",
       termsAccepted: false,
     },
@@ -61,12 +58,11 @@ export default function SignUp() {
       {
         name: values.name,
         email: values.email,
-        phoneNumber: `${values.dialCode}${values.phone}`,
+        phone: values.phone ? `${values.phoneCountryCode}${values.phone}` : undefined,
         password: values.password,
       },
       {
-        onSuccess: (response) => {
-          useAuthStore.getState().setPendingAccessToken(response.data.accessToken);
+        onSuccess: () => {
           router.push({
             pathname: "/(auth)/sign-up/verify-email",
             params: { email: values.email },
@@ -116,7 +112,7 @@ export default function SignUp() {
                 keyboardType="email-address"
               />
 
-              <PhoneInput control={control} name="phone" countryName="dialCode" label="Phone Number" />
+              <PhoneInput control={control} name="phone" countryName="phoneCountryCode" label="Phone Number" />
 
               <FormInput
                 control={control}
