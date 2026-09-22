@@ -1,4 +1,10 @@
+import { useEffect, useState } from "react";
+
 import { useSignInMutation } from "@/features/auth/hooks/use-auth-mutations";
+import {
+  isPasskeySupported,
+  useUsernamelessPasskeyLoginMutation,
+} from "@/features/auth/hooks/use-passkey-mutations";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams, type Href } from "expo-router";
@@ -8,11 +14,13 @@ import { Keyboard, Pressable, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { z } from "zod";
 
+import { getHasRegisteredPasskey } from "@/lib/passkey-storage";
 import { AnimatedWaveEmoji } from "@/components/animated-wave-emoji";
 import { Button } from "@/components/button";
 import { FormError } from "@/components/form-error";
 import { FormInput } from "@/components/form-input";
 import { FormScreen } from "@/components/form-screen";
+import { FingerScanIcon } from "@/components/icons/finger-scan-icon";
 import { LockIcon } from "@/components/icons/lock-icon";
 import { Logo } from "@/components/icons/logo";
 import { MailIcon } from "@/components/icons/mail-icon";
@@ -27,7 +35,15 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 
 export default function SignIn() {
   const signInMutation = useSignInMutation();
+  const passkeyLoginMutation = useUsernamelessPasskeyLoginMutation();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
+
+  const [showPasskeyButton, setShowPasskeyButton] = useState(false);
+
+  useEffect(() => {
+    if (!isPasskeySupported()) return;
+    getHasRegisteredPasskey().then(setShowPasskeyButton);
+  }, []);
 
   const {
     control,
@@ -44,6 +60,12 @@ export default function SignIn() {
 
   const onSubmit = (values: SignInFormValues) => {
     signInMutation.mutate(values, {
+      onSuccess: () => router.replace((redirect ?? "/home") as Href),
+    });
+  };
+
+  const onPasskeySignIn = () => {
+    passkeyLoginMutation.mutate(undefined, {
       onSuccess: () => router.replace((redirect ?? "/home") as Href),
     });
   };
@@ -99,7 +121,13 @@ export default function SignIn() {
             </Pressable>
 
             <FormError
-              message={signInMutation.isError ? getErrorMessage(signInMutation.error) : null}
+              message={
+                signInMutation.isError
+                  ? getErrorMessage(signInMutation.error)
+                  : passkeyLoginMutation.isError
+                    ? getErrorMessage(passkeyLoginMutation.error)
+                    : null
+              }
               className="text-center"
             />
 
@@ -111,6 +139,18 @@ export default function SignIn() {
             >
               <Text>Log In</Text>
             </Button>
+
+            {showPasskeyButton && (
+              <Button
+                onPress={onPasskeySignIn}
+                loading={passkeyLoginMutation.isPending}
+                variant="outline"
+                size="xl"
+              >
+                <FingerScanIcon size={20} />
+                <Text>Sign in with Fingerprint</Text>
+              </Button>
+            )}
 
             <View className="flex-row justify-center gap-1">
               <Text className="text-muted-foreground">Don&apos;t have an account?</Text>

@@ -82,3 +82,20 @@ export type ChangePasswordPayload = {
 export type CurrentUserResponseData = {
   user: AuthUser;
 };
+
+// Passthrough JSON shapes — validated deeply by @simplewebauthn/server on the
+// backend and by react-native-passkeys on the client, so no need to model
+// their internals here.
+export type PasskeyRegistrationOptions = Record<string, unknown>;
+export type PasskeyRegistrationCredential = Record<string, unknown>;
+export type PasskeyAuthenticationOptions = Record<string, unknown>;
+export type PasskeyAuthenticationCredential = Record<string, unknown>;
+
+export type WebauthnCredentialSummary = {
+  id: string;
+  credentialId: string;
+  deviceName: string | null;
+  transports: string[];
+  createdAt: string;
+  lastUsedAt: string | null;
+};

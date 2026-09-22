@@ -51,6 +51,7 @@
     "react-native-confetti-cannon": "^1.5.2",
     "react-native-gesture-handler": "~2.32.0",
     "react-native-keyboard-controller": "1.21.9",
+    "react-native-passkeys": "^0.4.2",
     "react-native-qrcode-svg": "^6.3.24",
     "react-native-reanimated": "~4.5.1",
     "react-native-reanimated-carousel": "^5.1.1",

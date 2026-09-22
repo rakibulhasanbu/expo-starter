@@ -1,9 +1,8 @@
+import { useAuthStore } from "@/store/auth-store";
 import { useMutation } from "@tanstack/react-query";
 
 import { queryClient } from "@/lib/query-client";
-import { useAuthStore } from "@/store/auth-store";
 
-import { seedCurrentUserCache } from "../lib/sync-current-user";
 import {
   fetchCurrentUser,
   forgotPassword,
@@ -14,11 +13,12 @@ import {
   signUp,
   verifyEmail,
 } from "../api/auth-api";
+import { seedCurrentUserCache } from "../lib/sync-current-user";
 
 // Shared by every flow that ends in an auto-login (sign-in, verify-email,
 // reset-password): stores the token pair, then fetches /users/me to seed the
 // cache since none of these endpoints return the user object inline.
-const establishSession = async (tokens: { accessToken: string; refreshToken: string }) => {
+export const establishSession = async (tokens: { accessToken: string; refreshToken: string }) => {
   await useAuthStore.getState().setSession(tokens);
   const { data: user } = await fetchCurrentUser();
   seedCurrentUserCache(user);

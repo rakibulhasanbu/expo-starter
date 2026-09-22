@@ -1,10 +1,19 @@
+import { useEffect, useState } from "react";
+
 import { useIsPinExistQuery } from "@/features/auth/hooks/use-auth-queries";
+import {
+  isPasskeySupported,
+  useRegisterPasskeyMutation,
+  useRemovePasskeyMutation,
+} from "@/features/auth/hooks/use-passkey-mutations";
 import { SecurityMenuRow } from "@/features/settings/components/security-menu-row";
-import { useSecurityStore } from "@/store/security-store";
+import { useToastStore } from "@/store/toast-store";
+import { getErrorMessage } from "@/utils/get-error-message";
 import { router } from "expo-router";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { getHasRegisteredPasskey } from "@/lib/passkey-storage";
 import { BackButton } from "@/components/back-button";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { FingerScanIcon } from "@/components/icons/finger-scan-icon";
@@ -13,10 +22,41 @@ import { LockIcon } from "@/components/icons/lock-icon";
 import { Text } from "@/components/text";
 import { ToggleSwitch } from "@/components/toggle-switch";
 
+const DEVICE_NAME =
+  Platform.OS === "ios" ? "iPhone" : Platform.OS === "android" ? "Android device" : "Browser";
+
 export default function SecuritySettingsScreen() {
-  const biometricsEnabled = useSecurityStore((state) => state.biometricsEnabled);
-  const toggleBiometrics = useSecurityStore((state) => state.toggleBiometrics);
   const { data: isPinExist } = useIsPinExistQuery();
+  const showToast = useToastStore((state) => state.show);
+
+  const [passkeyEnabled, setPasskeyEnabled] = useState(false);
+  const registerPasskey = useRegisterPasskeyMutation();
+  const removePasskey = useRemovePasskeyMutation();
+  const passkeySupported = isPasskeySupported();
+
+  useEffect(() => {
+    getHasRegisteredPasskey().then(setPasskeyEnabled);
+  }, []);
+
+  const handleToggleBiometrics = async (next: boolean) => {
+    if (!passkeySupported) {
+      showToast("error", "This device doesn't support fingerprint/face sign-in.");
+      return;
+    }
+
+    setPasskeyEnabled(next);
+
+    try {
+      if (next) {
+        await registerPasskey.mutateAsync(DEVICE_NAME);
+      } else {
+        await removePasskey.mutateAsync();
+      }
+    } catch (error) {
+      setPasskeyEnabled(!next);
+      showToast("error", getErrorMessage(error));
+    }
+  };
 
   return (
     <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background">
@@ -51,8 +91,8 @@ export default function SecuritySettingsScreen() {
           />
           <SecurityMenuRow
             icon={<FingerScanIcon size={16} />}
-            label="Biometrics"
-            right={<ToggleSwitch value={biometricsEnabled} onValueChange={toggleBiometrics} />}
+            label="Fingerprint Sign-In"
+            right={<ToggleSwitch value={passkeyEnabled} onValueChange={handleToggleBiometrics} />}
           />
         </View>
       </View>
