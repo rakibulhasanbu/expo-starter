@@ -1,5 +1,3 @@
-import type { ChangePasswordResponseData } from "@/features/auth/types";
-
 export type Gender = "male" | "female" | "other";
 
 export type UpdateProfilePayload = {
@@ -19,12 +17,9 @@ export type TransactionLimit = {
   progressColorClassName: string;
 };
 
-export type ChangePasswordPayload = {
-  currentPassword: string;
-  newPassword: string;
+export type ConfirmAccountDeletionPayload = {
+  code: string;
 };
-
-export type { ChangePasswordResponseData };
 
 export type ChangePinPayload = {
   pin: string;

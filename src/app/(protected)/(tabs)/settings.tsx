@@ -1,12 +1,13 @@
 import * as React from "react";
 
+import { useSignOutMutation } from "@/features/auth/hooks/use-auth-mutations";
 import { ConfirmActionSheet } from "@/features/settings/components/confirm-action-sheet";
 import { ProfileSummaryRow } from "@/features/settings/components/profile-summary-row";
 import { SettingsListItem } from "@/features/settings/components/settings-list-item";
-import { useDeleteAccountMutation } from "@/features/settings/hooks/use-settings-mutations";
-import { presentSupport } from "@/features/support/lib/intercom";
-import { useAuthStore } from "@/store/auth-store";
+import { useRequestAccountDeletionMutation } from "@/features/settings/hooks/use-settings-mutations";
 import { useThemeStore } from "@/store/theme-store";
+import { useToastStore } from "@/store/toast-store";
+import { getErrorMessage } from "@/utils/get-error-message";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { router } from "expo-router";
 import { ScrollView, View } from "react-native";
@@ -14,7 +15,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { CustomerSupportIcon } from "@/components/icons/customer-support-icon";
 import { GiftIcon } from "@/components/icons/gift-icon";
-import { InfoCircleIcon } from "@/components/icons/info-circle-icon";
 import { LockIcon } from "@/components/icons/lock-icon";
 import { LogoutIcon } from "@/components/icons/logout-icon";
 import { MoonIcon } from "@/components/icons/moon-icon";
@@ -25,7 +25,8 @@ import { Text } from "@/components/text";
 import { ToggleSwitch } from "@/components/toggle-switch";
 
 export default function SettingsTab() {
-  const deleteAccountMutation = useDeleteAccountMutation();
+  const requestAccountDeletionMutation = useRequestAccountDeletionMutation();
+  const signOutMutation = useSignOutMutation();
   const theme = useThemeStore((state) => state.theme);
   const setTheme = useThemeStore((state) => state.setTheme);
 
@@ -92,17 +93,10 @@ export default function SettingsTab() {
               }}
             />
             <SettingsListItem
-              icon={<InfoCircleIcon size={16} />}
-              label="About Dolo"
-              onPress={() => {
-                router.push("/about-dolo");
-              }}
-            />
-            <SettingsListItem
               icon={<CustomerSupportIcon size={20} />}
               label="Support"
               onPress={() => {
-                presentSupport();
+                router.push("/support");
               }}
             />
             <SettingsListItem
@@ -132,7 +126,7 @@ export default function SettingsTab() {
         confirmLabel="Yes, Log out"
         onConfirm={() => {
           logoutSheetRef.current?.dismiss();
-          useAuthStore.getState().signOut();
+          signOutMutation.mutate();
         }}
       />
 
@@ -141,10 +135,20 @@ export default function SettingsTab() {
         icon={<TrashIcon size={24} className="text-destructive" />}
         iconContainerClassName="bg-destructive/10"
         title="Delete this account?"
-        description="Are you sure you want to delete your account? You wont be able to carry out transaction and this action cannot be undone."
-        confirmLabel="Yes, Delete"
-        loading={deleteAccountMutation.isPending}
-        onConfirm={() => deleteAccountMutation.mutate()}
+        description="We'll email you a 6-digit code to confirm. Deleting is permanent after the grace period and cannot be undone."
+        confirmLabel="Send confirmation code"
+        loading={requestAccountDeletionMutation.isPending}
+        onConfirm={() => {
+          requestAccountDeletionMutation.mutate(undefined, {
+            onSuccess: () => {
+              deleteSheetRef.current?.dismiss();
+              router.push("/delete-account/otp");
+            },
+            onError: (error) => {
+              useToastStore.getState().show("error", getErrorMessage(error));
+            },
+          });
+        }}
       />
     </SafeAreaView>
   );

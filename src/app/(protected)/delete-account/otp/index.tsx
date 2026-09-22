@@ -1,14 +1,14 @@
 import { ForgotPasswordLayout } from "@/features/auth/components/forgot-password-layout";
 import {
-  useResendVerificationMutation,
-  useVerifyEmailMutation,
-} from "@/features/auth/hooks/use-auth-mutations";
+  useConfirmAccountDeletionMutation,
+  useRequestAccountDeletionMutation,
+} from "@/features/settings/hooks/use-settings-mutations";
+import { useAuthStore } from "@/store/auth-store";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { router, useLocalSearchParams } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 import { z } from "zod";
 
 import { Button } from "@/components/button";
@@ -17,19 +17,19 @@ import { OtpInput } from "@/components/otp-input";
 import { Text } from "@/components/text";
 import { getErrorMessage } from "@/utils/get-error-message";
 
-const otpSchema = z.object({
+const deleteAccountOtpSchema = z.object({
   otp: z.string().length(6, "Enter the 6-digit code"),
 });
 
-type OtpFormValues = z.infer<typeof otpSchema>;
+type DeleteAccountOtpFormValues = z.infer<typeof deleteAccountOtpSchema>;
 
 // Matches the backend's hardcoded 60s resend cooldown (email-tokens.service.ts).
 const RESEND_COOLDOWN_SECONDS = 60;
 
-export default function SignUpVerifyEmail() {
-  const { email } = useLocalSearchParams<{ email: string }>();
-  const verifyEmailMutation = useVerifyEmailMutation();
-  const resendVerificationMutation = useResendVerificationMutation();
+export default function DeleteAccountOtp() {
+  const email = useAuthStore((state) => state.user?.email);
+  const confirmMutation = useConfirmAccountDeletionMutation();
+  const resendMutation = useRequestAccountDeletionMutation();
   const [resendCooldown, setResendCooldown] = useState(RESEND_COOLDOWN_SECONDS);
 
   useEffect(() => {
@@ -42,61 +42,53 @@ export default function SignUpVerifyEmail() {
     control,
     handleSubmit,
     formState: { isValid },
-  } = useForm<OtpFormValues>({
-    resolver: zodResolver(otpSchema),
+  } = useForm<DeleteAccountOtpFormValues>({
+    resolver: zodResolver(deleteAccountOtpSchema),
     mode: "onChange",
     defaultValues: { otp: "" },
   });
 
-  const onSubmit = (values: OtpFormValues) => {
-    verifyEmailMutation.mutate(
-      { email, code: values.otp },
-      {
-        // Verifying auto-signs the user in — go straight to the app.
-        onSuccess: () => router.replace("/home"),
-      }
-    );
+  const onSubmit = (values: DeleteAccountOtpFormValues) => {
+    confirmMutation.mutate({ code: values.otp });
   };
 
   const onResend = () => {
-    resendVerificationMutation.mutate(
-      { email },
-      { onSuccess: () => setResendCooldown(RESEND_COOLDOWN_SECONDS) }
-    );
+    resendMutation.mutate(undefined, { onSuccess: () => setResendCooldown(RESEND_COOLDOWN_SECONDS) });
   };
 
-  const errorMessage = verifyEmailMutation.isError
-    ? getErrorMessage(verifyEmailMutation.error)
-    : resendVerificationMutation.isError
-      ? getErrorMessage(resendVerificationMutation.error)
+  const errorMessage = confirmMutation.isError
+    ? getErrorMessage(confirmMutation.error)
+    : resendMutation.isError
+      ? getErrorMessage(resendMutation.error)
       : null;
 
   return (
     <>
       <StatusBar style="dark" />
       <ForgotPasswordLayout
-        title="Verify Email Address"
-        fallbackHref="/(auth)/sign-up"
+        title="Delete account"
+        fallbackHref="/(protected)/(tabs)/settings"
         subtitle={
           <>
-            Kindly enter the 6 digit code sent to your mail{" "}
-            <Text className="text-foreground">{email}</Text>
+            Enter the 6 digit code sent to <Text className="text-foreground">{email}</Text> to
+            permanently confirm account deletion
           </>
         }
         footer={
           <>
             <Button
+              variant="destructive"
               onPress={handleSubmit(onSubmit)}
               disabled={!isValid}
-              loading={verifyEmailMutation.isPending}
+              loading={confirmMutation.isPending}
               size="xl"
             >
-              <Text>Submit</Text>
+              <Text>Delete my account</Text>
             </Button>
 
             <Pressable
               className="group items-center"
-              disabled={resendCooldown > 0 || resendVerificationMutation.isPending}
+              disabled={resendCooldown > 0 || resendMutation.isPending}
               onPress={onResend}
             >
               <Text className="font-urbanist-bold text-base text-primary group-disabled:text-subtitle group-active:underline">
@@ -108,7 +100,9 @@ export default function SignUpVerifyEmail() {
           </>
         }
       >
-        <OtpInput control={control} name="otp" length={6} />
+        <View className="gap-4">
+          <OtpInput control={control} name="otp" length={6} />
+        </View>
       </ForgotPasswordLayout>
     </>
   );

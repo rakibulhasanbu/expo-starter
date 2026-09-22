@@ -1,85 +1,80 @@
-export type SignInPayload = {
-  email: string;
-  password: string;
-};
-
 export type AuthTokens = {
   accessToken: string;
   refreshToken: string;
 };
 
+export type UserRole = "USER" | "ADMIN" | "SUPER_ADMIN";
+export type UserStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED";
+
 export type AuthUser = {
   id: string;
-  name: string;
   email: string;
-  phoneNumber: string;
-  role: "user" | "admin" | "superAdmin";
-  shouldSendEmail: boolean;
-  failedLoginAttempt: number | null;
-  profileImg: string | null;
-  isVerified: boolean;
-  isBlocked: boolean | null;
-  birthDate: string | null;
-  deviceToken: string | null;
-  isKycVerified: boolean | null;
-  bushaBusinessId: string | null;
-  bushaCustomerId: string | null;
-  koraCardReferenceId: string | null;
+  username: string;
+  name: string | null;
+  phone: string | null;
+  avatarUrl: string | null;
+  role: UserRole;
+  status: UserStatus;
+  emailVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
 
-export type SignInResponseData = AuthTokens & {
-  user: AuthUser;
-  isPinExist: boolean;
-};
-
-export type VerifyForgotTokenPayload = {
+export type SignUpPayload = {
+  name?: string;
   email: string;
-  token: number;
+  password: string;
 };
 
-export type VerifyForgotTokenResponseData = {
-  token: number;
-  isValidate: boolean;
+export type SignUpResponseData = {
+  user: AuthUser;
 };
+
+export type SignInPayload = {
+  email: string;
+  password: string;
+  deviceType?: string;
+  deviceName?: string;
+};
+
+export type SignInResponseData = AuthTokens;
+
+export type RefreshTokenPayload = {
+  refreshToken: string;
+  deviceType?: string;
+  deviceName?: string;
+};
+
+export type RefreshTokenResponseData = AuthTokens;
+
+export type VerifyEmailPayload = {
+  email: string;
+  code: string;
+};
+
+export type VerifyEmailResponseData = AuthTokens;
+
+export type ResendVerificationPayload = {
+  email: string;
+};
+
+export type ForgotPasswordPayload = {
+  email: string;
+};
+
+export type ResetPasswordPayload = {
+  email: string;
+  code: string;
+  password: string;
+};
+
+export type ResetPasswordResponseData = AuthTokens;
 
 export type ChangePasswordPayload = {
-  email: string;
-  password: string;
-  otp?: number;
-  prePassword?: string;
-};
-
-export type ChangePasswordResponseData = AuthTokens & {
-  user: AuthUser;
-  isPinExist: boolean;
-};
-
-export type SignUpPayload = {
-  name: string;
-  email: string;
-  phoneNumber: string;
-  password: string;
-};
-
-export type SignUpResponseData = AuthTokens & {
-  user: AuthUser;
-  isPinExist: boolean;
-};
-
-export type VerifySignupTokenPayload = {
-  token: number;
-};
-
-export type VerifySignupTokenResponseData = {
-  accessToken: string;
-  user: AuthUser;
-  isPinExist: boolean;
+  currentPassword: string;
+  newPassword: string;
 };
 
 export type CurrentUserResponseData = {
-  accessToken: string;
   user: AuthUser;
-  isPinExist: boolean;
 };

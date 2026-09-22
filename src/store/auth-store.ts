@@ -29,18 +29,12 @@ type AuthState = {
   status: AuthStatus;
   accessToken: string | null;
   refreshToken: string | null;
-  // Short-lived, in-memory-only token for an unverified sign-up session — lets
-  // verify-signup-token/resend calls authenticate without flipping `status` to
-  // Authenticated (that stays reserved for a fully verified, signed-in session).
-  pendingAccessToken: string | null;
   // Persisted mirror of the current user, so screens have data to render
-  // immediately on cold start instead of waiting on a /profile refetch.
+  // immediately on cold start instead of waiting on a /users/me refetch.
   user: AuthUser | null;
   hydrate: () => Promise<void>;
   setSession: (tokens: AuthTokens) => Promise<void>;
   setUser: (user: AuthUser) => Promise<void>;
-  setPendingAccessToken: (accessToken: string) => void;
-  clearPendingAccessToken: () => void;
   signOut: () => Promise<void>;
 };
 
@@ -57,7 +51,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   status: AuthStatus.Idle,
   accessToken: null,
   refreshToken: null,
-  pendingAccessToken: null,
   user: null,
 
   hydrate: async () => {
@@ -84,10 +77,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     await setCachedUser(JSON.stringify(user));
     set({ user });
   },
-
-  setPendingAccessToken: (accessToken) => set({ pendingAccessToken: accessToken }),
-
-  clearPendingAccessToken: () => set({ pendingAccessToken: null }),
 
   signOut: async () => {
     await Promise.all([deleteAccessToken(), deleteRefreshToken(), removeCachedUser()]);

@@ -72,15 +72,7 @@
       ],
       "expo-sharing",
       "expo-status-bar",
-      "expo-web-browser",
-      [
-        "@intercom/intercom-react-native",
-        {
-          "appId": "REPLACE_WITH_INTERCOM_APP_ID",
-          "androidApiKey": "REPLACE_WITH_INTERCOM_ANDROID_API_KEY",
-          "iosApiKey": "REPLACE_WITH_INTERCOM_IOS_API_KEY"
-        }
-      ]
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

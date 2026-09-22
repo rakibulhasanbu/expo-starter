@@ -35,7 +35,7 @@ function ProfileSummaryRow() {
 
   const name = user.name ?? "";
   const email = user.email ?? "";
-  const avatarId = user.profileImg ?? null;
+  const avatarId = user.avatarUrl ?? null;
 
   return (
     <Pressable

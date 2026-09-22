@@ -1,25 +1,34 @@
 import { useMutation } from "@tanstack/react-query";
 
+import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth-store";
 
 import { seedCurrentUserCache } from "../lib/sync-current-user";
 import {
-  changePassword,
-  resendSignupEmail,
-  sendForgotPasswordEmail,
+  fetchCurrentUser,
+  forgotPassword,
+  logout,
+  resendVerification,
+  resetPassword,
   signIn,
   signUp,
-  verifyForgotToken,
-  verifySignupToken,
+  verifyEmail,
 } from "../api/auth-api";
+
+// Shared by every flow that ends in an auto-login (sign-in, verify-email,
+// reset-password): stores the token pair, then fetches /users/me to seed the
+// cache since none of these endpoints return the user object inline.
+const establishSession = async (tokens: { accessToken: string; refreshToken: string }) => {
+  await useAuthStore.getState().setSession(tokens);
+  const { data: user } = await fetchCurrentUser();
+  seedCurrentUserCache(user);
+};
 
 export const useSignInMutation = () => {
   return useMutation({
     mutationFn: signIn,
     onSuccess: async (response) => {
-      const { accessToken, refreshToken, user, isPinExist } = response.data;
-      await useAuthStore.getState().setSession({ accessToken, refreshToken });
-      seedCurrentUserCache({ ...response, data: { accessToken, user, isPinExist } });
+      await establishSession(response.data);
     },
   });
 };
@@ -30,32 +39,53 @@ export const useSignUpMutation = () => {
   });
 };
 
-export const useSendForgotPasswordEmailMutation = () => {
+// Verifying proves control of the mailbox, so the backend signs the user in —
+// this mutation carries that straight through into an authenticated session.
+export const useVerifyEmailMutation = () => {
   return useMutation({
-    mutationFn: sendForgotPasswordEmail,
+    mutationFn: verifyEmail,
+    onSuccess: async (response) => {
+      await establishSession(response.data);
+    },
   });
 };
 
-export const useVerifyForgotTokenMutation = () => {
+export const useResendVerificationMutation = () => {
   return useMutation({
-    mutationFn: verifyForgotToken,
+    mutationFn: resendVerification,
   });
 };
 
-export const useChangePasswordMutation = () => {
+export const useForgotPasswordMutation = () => {
   return useMutation({
-    mutationFn: changePassword,
+    mutationFn: forgotPassword,
   });
 };
 
-export const useVerifySignupTokenMutation = () => {
+// Consuming the reset code also proves account ownership, so — like
+// verify-email — the backend signs the user in on success.
+export const useResetPasswordMutation = () => {
   return useMutation({
-    mutationFn: verifySignupToken,
+    mutationFn: resetPassword,
+    onSuccess: async (response) => {
+      await establishSession(response.data);
+    },
   });
 };
 
-export const useResendSignupEmailMutation = () => {
+export const useSignOutMutation = () => {
   return useMutation({
-    mutationFn: resendSignupEmail,
+    mutationFn: async () => {
+      const { refreshToken } = useAuthStore.getState();
+      if (refreshToken) {
+        // Best-effort: the local session must clear even if this fails
+        // (backend unreachable, token already expired, etc).
+        await logout(refreshToken).catch(() => undefined);
+      }
+    },
+    onSettled: async () => {
+      await useAuthStore.getState().signOut();
+      queryClient.clear();
+    },
   });
 };

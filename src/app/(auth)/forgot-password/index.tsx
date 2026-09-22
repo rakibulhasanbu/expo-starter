@@ -1,5 +1,5 @@
 import { ForgotPasswordLayout } from "@/features/auth/components/forgot-password-layout";
-import { useSendForgotPasswordEmailMutation } from "@/features/auth/hooks/use-auth-mutations";
+import { useForgotPasswordMutation } from "@/features/auth/hooks/use-auth-mutations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -20,7 +20,7 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPassword() {
-  const sendForgotPasswordEmailMutation = useSendForgotPasswordEmailMutation();
+  const forgotPasswordMutation = useForgotPasswordMutation();
 
   const {
     control,
@@ -33,13 +33,16 @@ export default function ForgotPassword() {
   });
 
   const onSubmit = (values: ForgotPasswordFormValues) => {
-    sendForgotPasswordEmailMutation.mutate(values.email, {
-      onSuccess: () =>
-        router.push({
-          pathname: "/(auth)/forgot-password/otp",
-          params: { email: values.email },
-        }),
-    });
+    forgotPasswordMutation.mutate(
+      { email: values.email },
+      {
+        onSuccess: () =>
+          router.push({
+            pathname: "/(auth)/forgot-password/otp",
+            params: { email: values.email },
+          }),
+      }
+    );
   };
 
   return (
@@ -55,7 +58,7 @@ export default function ForgotPassword() {
             <Button
               onPress={handleSubmit(onSubmit)}
               disabled={!isValid}
-              loading={sendForgotPasswordEmailMutation.isPending}
+              loading={forgotPasswordMutation.isPending}
               size="xl"
             >
               <Text>Verify</Text>
@@ -63,9 +66,7 @@ export default function ForgotPassword() {
 
             <FormError
               message={
-                sendForgotPasswordEmailMutation.isError
-                  ? getErrorMessage(sendForgotPasswordEmailMutation.error)
-                  : null
+                forgotPasswordMutation.isError ? getErrorMessage(forgotPasswordMutation.error) : null
               }
               className="text-center"
             />

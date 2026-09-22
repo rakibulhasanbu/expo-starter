@@ -3,23 +3,20 @@ import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth-store";
 
 import { authKeys } from "../hooks/use-auth-queries";
-import type { AuthUser, CurrentUserResponseData } from "../types";
+import type { AuthUser } from "../types";
 
-type CurrentUserCache = ApiResponse<CurrentUserResponseData>;
+type CurrentUserCache = ApiResponse<AuthUser>;
 
-// Full response available (login, change-password): seed the cache outright
-// so useCurrentUserQuery/useIsPinExistQuery have data with no extra
-// /profile call, and mirror the user into the persisted store.
-export const seedCurrentUserCache = (response: CurrentUserCache) => {
-  useAuthStore.getState().setUser(response.data.user);
-  queryClient.setQueryData<CurrentUserCache>(authKeys.me(), response);
+// Seeds the cache outright so useCurrentUserQuery has data with no extra
+// /users/me call, and mirrors the user into the persisted store.
+export const seedCurrentUserCache = (user: AuthUser) => {
+  useAuthStore.getState().setUser(user);
+  queryClient.setQueryData<CurrentUserCache>(authKeys.me(), { data: user });
 };
 
-// Only AuthUser available (update-profile): patch the existing cache entry
-// in place and mirror into the persisted store.
+// Patches the existing cache entry in place and mirrors into the persisted
+// store (e.g. after update-profile, which only returns the updated user).
 export const syncCurrentUser = (user: AuthUser) => {
   useAuthStore.getState().setUser(user);
-  queryClient.setQueryData<CurrentUserCache>(authKeys.me(), (current) =>
-    current ? { ...current, data: { ...current.data, user } } : current
-  );
+  queryClient.setQueryData<CurrentUserCache>(authKeys.me(), { data: user });
 };

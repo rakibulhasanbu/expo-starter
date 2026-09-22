@@ -2,7 +2,6 @@ import "@/global.css";
 import "@/lib/svg-icon-interop";
 
 import { SplashGate } from "@/features/splash/components/splash-gate";
-// import { useSyncIntercomUser } from "@/features/support/hooks/use-sync-intercom-user";
 import { AuthStatus, useAuthStore } from "@/store/auth-store";
 import { Urbanist_500Medium, Urbanist_700Bold, useFonts } from "@expo-google-fonts/urbanist";
 import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
@@ -26,8 +25,6 @@ if (__DEV__ && Constants.executionEnvironment === ExecutionEnvironment.StoreClie
 export default function RootLayout() {
   const status = useAuthStore((state) => state.status);
   const [fontsLoaded] = useFonts({ Urbanist_500Medium, Urbanist_700Bold });
-
-  // useSyncIntercomUser();
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

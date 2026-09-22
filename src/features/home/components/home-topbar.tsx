@@ -7,7 +7,6 @@ import { Skeleton } from "@/components/skeleton";
 
 import { useCurrentUserQuery } from "@/features/auth/hooks/use-auth-queries";
 import { getAvatarSource } from "@/features/settings/lib/avatars";
-import { presentSupport } from "@/features/support/lib/intercom";
 
 export function HomeTopbar() {
   const { data: user, isPending } = useCurrentUserQuery();
@@ -19,7 +18,7 @@ export function HomeTopbar() {
           <Skeleton className="size-[45px] rounded-full" />
         ) : (
           <Image
-            source={getAvatarSource(user?.profileImg)}
+            source={getAvatarSource(user?.avatarUrl)}
             style={{ width: 45, height: 45, borderRadius: 200 }}
           />
         )}
@@ -27,7 +26,7 @@ export function HomeTopbar() {
 
       <Pressable
         className="size-[45px] items-center justify-center rounded-full bg-background"
-        onPress={() => presentSupport()}
+        onPress={() => router.push("/support")}
         hitSlop={8}
       >
         <CustomerSupportIcon size={20} />

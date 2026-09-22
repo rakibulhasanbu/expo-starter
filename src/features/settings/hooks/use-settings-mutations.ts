@@ -1,22 +1,24 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import type { AuthUser } from "@/features/auth/types";
 import { authKeys } from "@/features/auth/hooks/use-auth-queries";
-import { seedCurrentUserCache, syncCurrentUser } from "@/features/auth/lib/sync-current-user";
+import { syncCurrentUser } from "@/features/auth/lib/sync-current-user";
+import type { ChangePasswordPayload } from "@/features/auth/types";
+import { queryClient } from "@/lib/query-client";
 import { useAuthStore } from "@/store/auth-store";
 import { useNotificationSettingsStore } from "@/store/notification-settings-store";
 
 import type {
   AddPinFirstTimePayload,
-  ChangePasswordPayload,
   ChangePinPayload,
+  ConfirmAccountDeletionPayload,
   UpdateNotificationPreferencesPayload,
 } from "../types";
 import {
   addPinFirstTime,
   changePassword,
   changePin,
-  deleteAccount,
+  confirmAccountDeletion,
+  requestAccountDeletion,
   sendPinForgotToken,
   updateProfile,
 } from "../api/settings-api";
@@ -30,44 +32,34 @@ export const useUpdateProfileMutation = () => {
   });
 };
 
-export const useDeleteAccountMutation = () => {
+// Step 1 of account deletion: emails a 6-digit confirmation code.
+export const useRequestAccountDeletionMutation = () => {
   return useMutation({
-    mutationFn: deleteAccount,
+    mutationFn: requestAccountDeletion,
+  });
+};
+
+// Step 2: consuming the code soft-deletes the account and revokes every
+// session server-side, so there's nothing left to keep alive locally either.
+export const useConfirmAccountDeletionMutation = () => {
+  return useMutation({
+    mutationFn: (payload: ConfirmAccountDeletionPayload) => confirmAccountDeletion(payload),
     onSuccess: async () => {
       await useAuthStore.getState().signOut();
+      queryClient.clear();
     },
   });
 };
 
+// The backend revokes every refresh token for the user on a successful
+// change-password (auth.service.ts), including the one this session is
+// holding — so there's no session left to keep alive here. Sign out and
+// send the user back to sign in with their new password.
 export const useChangePasswordMutation = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (payload: ChangePasswordPayload) => {
-      const user = queryClient.getQueryData<{ data: { user: AuthUser } }>(authKeys.me())?.data.user;
-      if (!user?.email) {
-        throw new Error("Unable to determine current user's email");
-      }
-
-      return changePassword({
-        email: user.email,
-        currentPassword: payload.currentPassword,
-        newPassword: payload.newPassword,
-      });
-    },
-    onSuccess: (response) => {
-      const { refreshToken } = useAuthStore.getState();
-      if (refreshToken) {
-        useAuthStore.getState().setSession({ accessToken: response.data.accessToken, refreshToken });
-      }
-      seedCurrentUserCache({
-        ...response,
-        data: {
-          accessToken: response.data.accessToken,
-          user: response.data.user,
-          isPinExist: response.data.isPinExist,
-        },
-      });
+    mutationFn: (payload: ChangePasswordPayload) => changePassword(payload),
+    onSuccess: async () => {
+      await useAuthStore.getState().signOut();
     },
   });
 };

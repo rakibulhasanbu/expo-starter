@@ -3,23 +3,18 @@ import { apiClient } from "@/lib/api-client";
 
 import type {
   ChangePasswordPayload,
-  ChangePasswordResponseData,
   CurrentUserResponseData,
+  ForgotPasswordPayload,
+  ResendVerificationPayload,
+  ResetPasswordPayload,
+  ResetPasswordResponseData,
   SignInPayload,
   SignInResponseData,
   SignUpPayload,
   SignUpResponseData,
-  VerifyForgotTokenPayload,
-  VerifyForgotTokenResponseData,
-  VerifySignupTokenPayload,
-  VerifySignupTokenResponseData,
+  VerifyEmailPayload,
+  VerifyEmailResponseData,
 } from "../types";
-
-export const signIn = async (payload: SignInPayload): Promise<ApiResponse<SignInResponseData>> => {
-  const { data } = await apiClient.post<ApiResponse<SignInResponseData>>("/auth/signin", payload);
-
-  return data;
-};
 
 export const signUp = async (payload: SignUpPayload): Promise<ApiResponse<SignUpResponseData>> => {
   const { data } = await apiClient.post<ApiResponse<SignUpResponseData>>("/auth/signup", payload);
@@ -27,50 +22,52 @@ export const signUp = async (payload: SignUpPayload): Promise<ApiResponse<SignUp
   return data;
 };
 
-export const fetchCurrentUser = async (): Promise<ApiResponse<CurrentUserResponseData>> => {
-  const { data } = await apiClient.get<ApiResponse<CurrentUserResponseData>>("/profile");
+export const signIn = async (payload: SignInPayload): Promise<ApiResponse<SignInResponseData>> => {
+  const { data } = await apiClient.post<ApiResponse<SignInResponseData>>("/auth/signin", payload);
 
   return data;
 };
 
-export const sendForgotPasswordEmail = async (email: string): Promise<ApiResponse<null>> => {
-  const { data } = await apiClient.post<ApiResponse<null>>(`/auth/send-forgot-email/${encodeURIComponent(email)}`);
+export const logout = async (refreshToken: string): Promise<void> => {
+  await apiClient.post("/auth/logout", { refreshToken });
+};
+
+export const verifyEmail = async (
+  payload: VerifyEmailPayload
+): Promise<ApiResponse<VerifyEmailResponseData>> => {
+  const { data } = await apiClient.post<ApiResponse<VerifyEmailResponseData>>("/auth/verify-email", payload);
 
   return data;
 };
 
-export const verifyForgotToken = async (
-  payload: VerifyForgotTokenPayload
-): Promise<ApiResponse<VerifyForgotTokenResponseData>> => {
-  const { data } = await apiClient.post<ApiResponse<VerifyForgotTokenResponseData>>(
-    "/auth/verify-forgot-token",
-    payload
-  );
+export const resendVerification = async (payload: ResendVerificationPayload): Promise<ApiResponse<null>> => {
+  const { data } = await apiClient.post<ApiResponse<null>>("/auth/resend-verification", payload);
 
   return data;
 };
 
-export const changePassword = async (
-  payload: ChangePasswordPayload
-): Promise<ApiResponse<ChangePasswordResponseData>> => {
-  const { data } = await apiClient.post<ApiResponse<ChangePasswordResponseData>>("/auth/change-password", payload);
+export const forgotPassword = async (payload: ForgotPasswordPayload): Promise<ApiResponse<null>> => {
+  const { data } = await apiClient.post<ApiResponse<null>>("/auth/forgot-password", payload);
 
   return data;
 };
 
-export const verifySignupToken = async (
-  payload: VerifySignupTokenPayload
-): Promise<ApiResponse<VerifySignupTokenResponseData>> => {
-  const { data } = await apiClient.post<ApiResponse<VerifySignupTokenResponseData>>(
-    "/auth/verify-signup-token",
-    payload
-  );
+export const resetPassword = async (
+  payload: ResetPasswordPayload
+): Promise<ApiResponse<ResetPasswordResponseData>> => {
+  const { data } = await apiClient.post<ApiResponse<ResetPasswordResponseData>>("/auth/reset-password", payload);
 
   return data;
 };
 
-export const resendSignupEmail = async (email: string): Promise<ApiResponse<{ otp?: number }>> => {
-  const { data } = await apiClient.post<ApiResponse<{ otp?: number }>>(`/auth/resend/${encodeURIComponent(email)}`);
+export const changePassword = async (payload: ChangePasswordPayload): Promise<ApiResponse<null>> => {
+  const { data } = await apiClient.post<ApiResponse<null>>("/auth/change-password", payload);
+
+  return data;
+};
+
+export const fetchCurrentUser = async (): Promise<ApiResponse<CurrentUserResponseData["user"]>> => {
+  const { data } = await apiClient.get<ApiResponse<CurrentUserResponseData["user"]>>("/users/me");
 
   return data;
 };

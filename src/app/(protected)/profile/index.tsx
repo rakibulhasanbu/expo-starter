@@ -63,9 +63,10 @@ export default function Profile() {
     () => ({
       name: user?.name ?? "",
       email: user?.email ?? "",
-      birthDate: user?.birthDate ?? null,
+      // Not present on this backend's user model yet.
+      birthDate: null,
       gender: null,
-      avatarId: user?.profileImg ?? DEFAULT_AVATAR_ID,
+      avatarId: user?.avatarUrl ?? DEFAULT_AVATAR_ID,
     }),
     [user]
   );

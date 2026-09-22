@@ -1,13 +1,14 @@
-import { queryClient } from "@/lib/query-client";
+import { env } from "@/config";
 import { useAuthStore } from "@/store/auth-store";
 import { isAccessTokenError } from "@/utils/is-auth-error";
 import { logApiError } from "@/utils/log-api-error";
 import { create, type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 import type { ApiResponse } from "@/types/api-types";
+import { queryClient } from "@/lib/query-client";
 
 export const apiClient = create({
-  baseURL: `${process.env.EXPO_PUBLIC_API_BASE_URL}/v1`,
+  baseURL: `${env.apiBaseUrl}/api/v1`,
 });
 
 // Separate instance with no interceptors attached, used only for the refresh
@@ -21,6 +22,7 @@ type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
 type RefreshTokensData = {
   accessToken: string;
+  refreshToken: string;
 };
 
 // Signing out without clearing the cache leaves the previous user's data sitting
@@ -33,25 +35,26 @@ const endSession = async () => {
 // De-dupes concurrent 401s behind a single in-flight refresh call.
 let refreshPromise: Promise<string> | null = null;
 
+// The backend rotates the refresh token on every use — the old one is revoked
+// server-side, so the new pair must fully replace it in the store.
 const refreshAccessToken = async (refreshToken: string): Promise<string> => {
-  const { data } = await refreshClient.post<ApiResponse<RefreshTokensData>>("/auth/refresh-token", {
+  const { data } = await refreshClient.post<ApiResponse<RefreshTokensData>>("/auth/refresh", {
     refreshToken,
   });
 
   await useAuthStore.getState().setSession({
     accessToken: data.data.accessToken,
-    refreshToken,
+    refreshToken: data.data.refreshToken,
   });
 
   return data.data.accessToken;
 };
 
 apiClient.interceptors.request.use((config) => {
-  const { accessToken, pendingAccessToken } = useAuthStore.getState();
-  const token = accessToken ?? pendingAccessToken;
+  const { accessToken } = useAuthStore.getState();
 
-  if (token) {
-    config.headers.set("Authorization", token);
+  if (accessToken) {
+    config.headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
   return config;
@@ -84,7 +87,7 @@ apiClient.interceptors.response.use(
       });
       const newAccessToken = await refreshPromise;
 
-      originalRequest.headers.set("Authorization", newAccessToken);
+      originalRequest.headers.set("Authorization", `Bearer ${newAccessToken}`);
       return apiClient(originalRequest);
     } catch (refreshError) {
       // The refresh token itself is expired/invalid (the backend answers 403
