@@ -31,7 +31,7 @@ const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().min(1, "Email is required").email("Enter a valid email"),
   birthDate: z.string().nullable(),
-  gender: z.enum(["male", "female", "other"]).nullable(),
+  gender: z.enum(["male", "female", "other", "prefer_not_to_say"]).nullable(),
   avatarId: z.string(),
 });
 
@@ -41,6 +41,7 @@ const GENDER_LABELS: Record<Gender, string> = {
   male: "Male",
   female: "Female",
   other: "Other",
+  prefer_not_to_say: "Prefer not to say",
 };
 
 const formatDate = (isoDate: string | null): string => {
@@ -63,8 +64,8 @@ export default function Profile() {
     () => ({
       name: user?.name ?? "",
       email: user?.email ?? "",
-      birthDate: user?.dateOfBirth ?? null,
-      gender: user?.gender ? GENDER_FROM_BACKEND[user.gender] : null,
+      birthDate: user?.profile?.dateOfBirth ?? null,
+      gender: user?.profile?.gender ? GENDER_FROM_BACKEND[user.profile.gender] : null,
       // Not a real URL yet — this app only offers a set of built-in avatar images, and the
       // backend's `avatarUrl` expects an actual URL, so the selection stays local-only for now.
       avatarId: DEFAULT_AVATAR_ID,
@@ -109,8 +110,12 @@ export default function Profile() {
     updateProfileMutation.mutate(
       {
         name: values.name,
-        dateOfBirth: values.birthDate ? values.birthDate.slice(0, 10) : undefined,
-        gender: values.gender ? GENDER_TO_BACKEND[values.gender] : undefined,
+        // `dateOfBirth` and `gender` live on the nested `user_profiles` record —
+        // sending them at the top level is rejected by the backend's strictObject.
+        profile: {
+          dateOfBirth: values.birthDate ? values.birthDate.slice(0, 10) : undefined,
+          gender: values.gender ? GENDER_TO_BACKEND[values.gender] : undefined,
+        },
       },
       {
         onSuccess: () => {

@@ -20,9 +20,3 @@ export const useCurrentUserQuery = () => {
     enabled: status === AuthStatus.Authenticated,
   });
 };
-
-// This backend has no PIN concept yet — kept as a stub so the PIN feature
-// screens (which have no matching backend endpoints either) keep compiling.
-export const useIsPinExistQuery = () => {
-  return { data: false as boolean | undefined, isLoading: false };
-};

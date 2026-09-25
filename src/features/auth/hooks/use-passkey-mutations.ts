@@ -9,8 +9,10 @@ import {
 
 import {
   getUsernamelessWebauthnLoginOptions,
+  getWebauthnLoginOptions,
   getWebauthnRegistrationOptions,
   loginWithUsernamelessWebauthn,
+  loginWithWebauthn,
   removeWebauthnCredential,
   verifyWebauthnRegistration,
 } from "../api/passkey-api";
@@ -62,6 +64,33 @@ export const useUsernamelessPasskeyLoginMutation = () => {
       const response = await loginWithUsernamelessWebauthn(
         credential as unknown as PasskeyAuthenticationCredential
       );
+      return response.data;
+    },
+    onSuccess: async (tokens) => {
+      await establishSession(tokens);
+    },
+  });
+};
+
+// Email-first login: the account is named up front, so the backend can list the
+// credentials it will accept. This is the only path that works for a passkey
+// that is not discoverable — the usernameless picker never offers those — and
+// it is also the way back in on a device that has the passkey but has lost the
+// local flag the fingerprint button is gated on (a reinstall, say).
+export const useEmailPasskeyLoginMutation = () => {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      const { data: options } = await getWebauthnLoginOptions(email);
+
+      const credential = await Passkeys.get(options as never);
+      if (!credential) {
+        throw new Error("Passkey sign-in was cancelled");
+      }
+
+      const response = await loginWithWebauthn({
+        email,
+        credential: credential as unknown as PasskeyAuthenticationCredential,
+      });
       return response.data;
     },
     onSuccess: async (tokens) => {

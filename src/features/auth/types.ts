@@ -3,9 +3,35 @@ export type AuthTokens = {
   refreshToken: string;
 };
 
-export type UserRole = "USER" | "ADMIN" | "SUPER_ADMIN";
+/**
+ * Role ids are lowercase slugs, not a closed union: roles are rows in the
+ * backend's `roles` table and new ones can be created at runtime. These three
+ * are the seeded system roles (`SYSTEM_ROLE_IDS` on the backend).
+ */
+export const ROLE_IDS = {
+  USER: "user",
+  ADMIN: "admin",
+  SUPER_ADMIN: "super_admin",
+} as const;
+
+export type RoleId = (typeof ROLE_IDS)[keyof typeof ROLE_IDS];
+
+export const hasRole = (roleIds: string[] | undefined, roleId: string) => !!roleIds?.includes(roleId);
+
 export type UserStatus = "PENDING_VERIFICATION" | "ACTIVE" | "SUSPENDED";
-export type UserGender = "MALE" | "FEMALE" | "OTHER";
+export type UserGender = "MALE" | "FEMALE" | "OTHER" | "PREFER_NOT_TO_SAY";
+
+/**
+ * Optional personal details. The backend stores these in a separate
+ * `user_profiles` table and nests them under `profile` — both in responses and
+ * in the `PATCH /users/me` request body.
+ */
+export type UserProfile = {
+  /** Calendar date (YYYY-MM-DD) — stored as a DATE, never a timestamp. */
+  dateOfBirth: string | null;
+  gender: UserGender | null;
+  bio: string | null;
+};
 
 export type AuthUser = {
   id: string;
@@ -14,12 +40,13 @@ export type AuthUser = {
   name: string | null;
   phone: string | null;
   avatarUrl: string | null;
-  dateOfBirth: string | null;
-  gender: UserGender | null;
-  role: UserRole;
+  roleIds: string[];
+  profile: UserProfile | null;
   status: UserStatus;
   emailVerifiedAt: string | null;
   twoFactorEnabled: boolean;
+  /** False for Google- or passkey-only accounts: offer set-password, not change-password. */
+  hasPassword: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -105,6 +132,20 @@ export type ResetPasswordResponseData = AuthTokens;
 export type ChangePasswordPayload = {
   currentPassword: string;
   newPassword: string;
+};
+
+/** For accounts that have no password yet — change-password rejects those. */
+export type SetPasswordPayload = {
+  newPassword: string;
+};
+
+export type GoogleLoginPayload = {
+  idToken: string;
+};
+
+export type ReactivateAccountPayload = {
+  email: string;
+  code: string;
 };
 
 export type CurrentUserResponseData = {

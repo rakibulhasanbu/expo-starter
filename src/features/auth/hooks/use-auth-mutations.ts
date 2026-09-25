@@ -10,7 +10,9 @@ import {
   fetchCurrentUser,
   forgotPassword,
   login2faVerify,
+  loginWithGoogle,
   logout,
+  reactivateAccount,
   resendVerification,
   resetPassword,
   setup2fa,
@@ -113,6 +115,23 @@ export const useResetPasswordMutation = () => {
     onSuccess: async (response) => {
       await establishSession(response.data);
     },
+  });
+};
+
+export const useGoogleLoginMutation = () => {
+  return useMutation({
+    mutationFn: loginWithGoogle,
+    onSuccess: async (response) => {
+      await establishSession(response.data);
+    },
+  });
+};
+
+// Reactivation only restores the account — it issues no session, so the caller
+// still has to send the user back through sign-in afterwards.
+export const useReactivateAccountMutation = () => {
+  return useMutation({
+    mutationFn: reactivateAccount,
   });
 };
 

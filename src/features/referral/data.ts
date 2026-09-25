@@ -1,7 +1,7 @@
 import type { Referral, ReferralSummary } from "./types";
 
-// No backend endpoint exists yet for referrals — this mirrors the values
-// shown in the Figma mock. Swap for a real query once available.
+// Intentionally mock-only: refer-and-earn is template UI with no backend by
+// design (TICKET-01). Values mirror the Figma mock.
 export const REFERRAL_SUMMARY: ReferralSummary = {
   code: "3EJDCJ99JNK",
   totalEarned: 0,

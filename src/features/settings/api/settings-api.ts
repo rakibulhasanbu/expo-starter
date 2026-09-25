@@ -1,18 +1,39 @@
-import { changePassword as changePasswordRequest } from "@/features/auth/api/auth-api";
-import type { AuthUser, ChangePasswordPayload } from "@/features/auth/types";
+import {
+  changePassword as changePasswordRequest,
+  setPassword as setPasswordRequest,
+} from "@/features/auth/api/auth-api";
+import type { AuthUser, ChangePasswordPayload, SetPasswordPayload } from "@/features/auth/types";
 
 import type { ApiResponse } from "@/types/api-types";
 import { apiClient } from "@/lib/api-client";
 
 import type {
-  AddPinFirstTimePayload,
-  ChangePinPayload,
   ConfirmAccountDeletionPayload,
+  NotificationPreferences,
+  UpdateNotificationPreferencesPayload,
   UpdateProfilePayload,
 } from "../types";
 
 export const updateProfile = async (payload: UpdateProfilePayload): Promise<ApiResponse<AuthUser>> => {
   const { data } = await apiClient.patch<ApiResponse<AuthUser>>("/users/me", payload);
+
+  return data;
+};
+
+// Users who never saved preferences get the backend defaults (everything on).
+export const fetchNotificationPreferences = async (): Promise<ApiResponse<NotificationPreferences>> => {
+  const { data } = await apiClient.get<ApiResponse<NotificationPreferences>>("/users/me/notifications");
+
+  return data;
+};
+
+export const updateNotificationPreferences = async (
+  payload: UpdateNotificationPreferencesPayload
+): Promise<ApiResponse<NotificationPreferences>> => {
+  const { data } = await apiClient.patch<ApiResponse<NotificationPreferences>>(
+    "/users/me/notifications",
+    payload
+  );
 
   return data;
 };
@@ -36,22 +57,5 @@ export const confirmAccountDeletion = async (
 export const changePassword = (payload: ChangePasswordPayload): Promise<ApiResponse<null>> =>
   changePasswordRequest(payload);
 
-export const addPinFirstTime = async (
-  payload: AddPinFirstTimePayload
-): Promise<ApiResponse<{ pin: string }>> => {
-  const { data } = await apiClient.post<ApiResponse<{ pin: string }>>("/auth/add-pin-first-time", payload);
-
-  return data;
-};
-
-export const changePin = async (payload: ChangePinPayload): Promise<ApiResponse<{ success: boolean }>> => {
-  const { data } = await apiClient.post<ApiResponse<{ success: boolean }>>("/auth/change-pin", payload);
-
-  return data;
-};
-
-export const sendPinForgotToken = async (): Promise<ApiResponse<{ otp: string }>> => {
-  const { data } = await apiClient.post<ApiResponse<{ otp: string }>>("/auth/send-pin-forgot-token");
-
-  return data;
-};
+export const setPassword = (payload: SetPasswordPayload): Promise<ApiResponse<null>> =>
+  setPasswordRequest(payload);

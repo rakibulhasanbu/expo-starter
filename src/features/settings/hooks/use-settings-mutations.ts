@@ -1,27 +1,19 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { authKeys } from "@/features/auth/hooks/use-auth-queries";
 import { syncCurrentUser } from "@/features/auth/lib/sync-current-user";
-import type { ChangePasswordPayload } from "@/features/auth/types";
-import { queryClient } from "@/lib/query-client";
+import type { ChangePasswordPayload, SetPasswordPayload } from "@/features/auth/types";
 import { useAuthStore } from "@/store/auth-store";
-import { useNotificationSettingsStore } from "@/store/notification-settings-store";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import type {
-  AddPinFirstTimePayload,
-  ChangePinPayload,
-  ConfirmAccountDeletionPayload,
-  UpdateNotificationPreferencesPayload,
-} from "../types";
+import { queryClient } from "@/lib/query-client";
+
 import {
-  addPinFirstTime,
   changePassword,
-  changePin,
   confirmAccountDeletion,
   requestAccountDeletion,
-  sendPinForgotToken,
+  setPassword,
   updateProfile,
 } from "../api/settings-api";
+import type { ConfirmAccountDeletionPayload } from "../types";
 
 export const useUpdateProfileMutation = () => {
   return useMutation({
@@ -64,44 +56,16 @@ export const useChangePasswordMutation = () => {
   });
 };
 
-export const useChangePinMutation = () => {
+// Unlike change-password, the backend keeps existing sessions alive here — this
+// adds a login method rather than rotating a credential. So no sign-out; just
+// refresh /users/me so `hasPassword` flips and the screen switches modes.
+export const useSetPasswordMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: ChangePinPayload) => changePin(payload),
+    mutationFn: (payload: SetPasswordPayload) => setPassword(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: authKeys.me() });
-    },
-  });
-};
-
-export const useAddPinFirstTimeMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: AddPinFirstTimePayload) => addPinFirstTime(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: authKeys.me() });
-    },
-  });
-};
-
-export const useSendPinForgotTokenMutation = () => {
-  return useMutation({
-    mutationFn: sendPinForgotToken,
-  });
-};
-
-// No notification-preferences endpoint exists yet — simulated latency until
-// a real API call is available.
-export const useUpdateNotificationPreferencesMutation = () => {
-  return useMutation({
-    mutationFn: async (payload: UpdateNotificationPreferencesPayload) => {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return payload;
-    },
-    onSuccess: (payload) => {
-      useNotificationSettingsStore.getState().setPreferences(payload);
     },
   });
 };

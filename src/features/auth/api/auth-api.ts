@@ -6,9 +6,12 @@ import type {
   ChangePasswordPayload,
   CurrentUserResponseData,
   ForgotPasswordPayload,
+  GoogleLoginPayload,
+  ReactivateAccountPayload,
   ResendVerificationPayload,
   ResetPasswordPayload,
   ResetPasswordResponseData,
+  SetPasswordPayload,
   SignInPayload,
   SignInResponseData,
   SignUpPayload,
@@ -67,6 +70,33 @@ export const resetPassword = async (
 
 export const changePassword = async (payload: ChangePasswordPayload): Promise<ApiResponse<null>> => {
   const { data } = await apiClient.post<ApiResponse<null>>("/auth/change-password", payload);
+
+  return data;
+};
+
+// Adds password login to an account that has none (Google- or passkey-only).
+// Unlike change-password this keeps existing sessions alive — it adds a login
+// method rather than rotating a credential that may be compromised.
+// The backend verifies this id token against its own GOOGLE_CLIENT_ID, then
+// either links the Google identity to an existing account or creates one.
+export const loginWithGoogle = async (payload: GoogleLoginPayload): Promise<ApiResponse<AuthTokens>> => {
+  const { data } = await apiClient.post<ApiResponse<AuthTokens>>("/auth/google", payload);
+
+  return data;
+};
+
+export const setPassword = async (payload: SetPasswordPayload): Promise<ApiResponse<null>> => {
+  const { data } = await apiClient.post<ApiResponse<null>>("/auth/set-password", payload);
+
+  return data;
+};
+
+// Undoes a self-deletion while the account is still in its grace period. The
+// code is not requested from here — the backend emails it automatically when
+// sign-in, sign-up or Google login hits a deleted account and answers 409
+// ACCOUNT_PENDING_DELETION, which is what routes the user to that screen.
+export const reactivateAccount = async (payload: ReactivateAccountPayload): Promise<ApiResponse<null>> => {
+  const { data } = await apiClient.post<ApiResponse<null>>("/auth/reactivate-account", payload);
 
   return data;
 };

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { useCurrentUserQuery, useIsPinExistQuery } from "@/features/auth/hooks/use-auth-queries";
+import { useCurrentUserQuery } from "@/features/auth/hooks/use-auth-queries";
 import {
   isPasskeySupported,
   useRegisterPasskeyMutation,
@@ -17,8 +17,8 @@ import { getHasRegisteredPasskey } from "@/lib/passkey-storage";
 import { BackButton } from "@/components/back-button";
 import { ArrowRightIcon } from "@/components/icons/arrow-right-icon";
 import { FingerScanIcon } from "@/components/icons/finger-scan-icon";
-import { KeyIcon } from "@/components/icons/key-icon";
 import { LockIcon } from "@/components/icons/lock-icon";
+import { MoreIcon } from "@/components/icons/more-icon";
 import { VerifyBadgeIcon } from "@/components/icons/verify-badge-icon";
 import { Text } from "@/components/text";
 import { ToggleSwitch } from "@/components/toggle-switch";
@@ -27,7 +27,6 @@ const DEVICE_NAME =
   Platform.OS === "ios" ? "iPhone" : Platform.OS === "android" ? "Android device" : "Browser";
 
 export default function SecuritySettingsScreen() {
-  const { data: isPinExist } = useIsPinExistQuery();
   const { data: currentUser } = useCurrentUserQuery();
   const showToast = useToastStore((state) => state.show);
   const isTwoFactorEnabled = currentUser?.twoFactorEnabled ?? false;
@@ -78,19 +77,15 @@ export default function SecuritySettingsScreen() {
         <View className="w-full gap-4">
           <SecurityMenuRow
             icon={<LockIcon size={16} />}
-            label="Change Password"
+            label={currentUser?.hasPassword === false ? "Set Password" : "Change Password"}
             right={<ArrowRightIcon size={16} />}
             onPress={() => router.push("/security-settings/change-password")}
           />
           <SecurityMenuRow
-            icon={<KeyIcon size={16} />}
-            label={isPinExist === false ? "Set PIN" : "Change PIN"}
+            icon={<MoreIcon size={16} />}
+            label="Active Devices"
             right={<ArrowRightIcon size={16} />}
-            onPress={() =>
-              router.push(
-                isPinExist === false ? "/security-settings/set-pin" : "/security-settings/change-pin"
-              )
-            }
+            onPress={() => router.push("/security-settings/sessions")}
           />
           <SecurityMenuRow
             icon={<FingerScanIcon size={16} />}

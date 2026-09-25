@@ -1,11 +1,15 @@
 import { useEffect, useState } from "react";
 
+import { GoogleSignInButton } from "@/features/auth/components/google-sign-in-button";
 import { useSignInMutation } from "@/features/auth/hooks/use-auth-mutations";
 import {
   isPasskeySupported,
+  useEmailPasskeyLoginMutation,
   useUsernamelessPasskeyLoginMutation,
 } from "@/features/auth/hooks/use-passkey-mutations";
+import { useToastStore } from "@/store/toast-store";
 import { getErrorMessage } from "@/utils/get-error-message";
+import { getAccountDeletionGraceEndsAt, isAccountPendingDeletion } from "@/utils/get-error-code";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router, useLocalSearchParams, type Href } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -36,18 +40,25 @@ type SignInFormValues = z.infer<typeof signInSchema>;
 export default function SignIn() {
   const signInMutation = useSignInMutation();
   const passkeyLoginMutation = useUsernamelessPasskeyLoginMutation();
+  const emailPasskeyLoginMutation = useEmailPasskeyLoginMutation();
   const { redirect } = useLocalSearchParams<{ redirect?: string }>();
 
   const [showPasskeyButton, setShowPasskeyButton] = useState(false);
+  // The usernameless button needs a passkey enrolled *on this device*; the
+  // email-first fallback only needs the platform to support passkeys at all.
+  // This one is a synchronous capability check, so it belongs in the initial
+  // state rather than in an effect.
+  const [isPasskeyCapable] = useState(isPasskeySupported);
 
   useEffect(() => {
-    if (!isPasskeySupported()) return;
+    if (!isPasskeyCapable) return;
     getHasRegisteredPasskey().then(setShowPasskeyButton);
-  }, []);
+  }, [isPasskeyCapable]);
 
   const {
     control,
     handleSubmit,
+    getValues,
     formState: { isValid },
   } = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
@@ -70,11 +81,38 @@ export default function SignIn() {
         }
         router.replace((redirect ?? "/home") as Href);
       },
+      onError: (error) => {
+        // The backend emails the reactivation code before answering with this,
+        // so the user only needs somewhere to enter it.
+        if (isAccountPendingDeletion(error)) {
+          const graceEndsAt = getAccountDeletionGraceEndsAt(error);
+          router.push({
+            pathname: "/(auth)/reactivate-account",
+            params: { email: values.email, ...(graceEndsAt ? { graceEndsAt } : {}) },
+          });
+        }
+      },
     });
   };
 
   const onPasskeySignIn = () => {
     passkeyLoginMutation.mutate(undefined, {
+      onSuccess: () => router.replace((redirect ?? "/home") as Href),
+    });
+  };
+
+  // The fallback for a passkey the native picker will not offer — a
+  // non-discoverable credential, or one this install has lost the local flag
+  // for. The backend can only name the allowed credentials once it knows whose
+  // account to look at, hence the email.
+  const onEmailPasskeySignIn = () => {
+    const email = getValues("email").trim();
+    if (!signInSchema.shape.email.safeParse(email).success) {
+      useToastStore.getState().show("error", "Enter your email first");
+      return;
+    }
+
+    emailPasskeyLoginMutation.mutate(email, {
       onSuccess: () => router.replace((redirect ?? "/home") as Href),
     });
   };
@@ -135,7 +173,9 @@ export default function SignIn() {
                   ? getErrorMessage(signInMutation.error)
                   : passkeyLoginMutation.isError
                     ? getErrorMessage(passkeyLoginMutation.error)
-                    : null
+                    : emailPasskeyLoginMutation.isError
+                      ? getErrorMessage(emailPasskeyLoginMutation.error)
+                      : null
               }
               className="text-center"
             />
@@ -160,6 +200,26 @@ export default function SignIn() {
                 <Text>Sign in with Fingerprint</Text>
               </Button>
             )}
+
+            {isPasskeyCapable && (
+              <Pressable className="group items-center py-1" onPress={onEmailPasskeySignIn}>
+                <Text className="text-base text-primary group-active:underline">
+                  {emailPasskeyLoginMutation.isPending
+                    ? "Waiting for your passkey…"
+                    : "Use a passkey with my email"}
+                </Text>
+              </Pressable>
+            )}
+
+            <GoogleSignInButton
+              onSuccess={() => router.replace((redirect ?? "/home") as Href)}
+              onAccountPendingDeletion={(graceEndsAt) =>
+                router.push({
+                  pathname: "/(auth)/reactivate-account",
+                  params: graceEndsAt ? { graceEndsAt } : {},
+                })
+              }
+            />
 
             <View className="flex-row justify-center gap-1">
               <Text className="text-muted-foreground">Don&apos;t have an account?</Text>

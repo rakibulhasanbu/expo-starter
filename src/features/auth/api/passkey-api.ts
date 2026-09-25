@@ -45,6 +45,34 @@ export const loginWithUsernamelessWebauthn = async (
   return data;
 };
 
+/**
+ * Email-first login, for an authenticator whose credential is not discoverable:
+ * it cannot identify the account on its own, so the server needs the email to
+ * list which credential ids are allowed.
+ */
+export const getWebauthnLoginOptions = async (
+  email: string
+): Promise<ApiResponse<PasskeyAuthenticationOptions>> => {
+  const { data } = await apiClient.post<ApiResponse<PasskeyAuthenticationOptions>>(
+    "/auth/webauthn/login/options",
+    { email }
+  );
+
+  return data;
+};
+
+export const loginWithWebauthn = async (payload: {
+  email: string;
+  credential: PasskeyAuthenticationCredential;
+}): Promise<ApiResponse<AuthTokens>> => {
+  const { data } = await apiClient.post<ApiResponse<AuthTokens>>(
+    "/auth/webauthn/login/verify",
+    payload
+  );
+
+  return data;
+};
+
 export const listWebauthnCredentials = async (): Promise<ApiResponse<WebauthnCredentialSummary[]>> => {
   const { data } = await apiClient.get<ApiResponse<WebauthnCredentialSummary[]>>(
     "/auth/webauthn/credentials"

@@ -20,6 +20,39 @@ const refreshClient = create({
 
 type RetryableConfig = InternalAxiosRequestConfig & { _retry?: boolean };
 
+// Endpoints under /auth that take no access token. A 401 from one of these IS
+// the answer — wrong password, expired code, unusable refresh token — so there
+// is no session to refresh and retrying would just repeat the failure.
+//
+// Matching on the whole "/auth/" namespace would be wrong: most of it is
+// authenticated (sessions, 2fa setup/enable/disable, passkey registration,
+// change-password, account deletion) and those DO need the refresh-and-retry
+// below, or a merely expired access token logs the user out.
+const PUBLIC_AUTH_PATHS = [
+  "/auth/signup",
+  "/auth/signin",
+  "/auth/refresh",
+  "/auth/logout",
+  "/auth/verify-email",
+  "/auth/resend-verification",
+  "/auth/reactivate-account",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/google",
+  "/auth/2fa/login-verify",
+  // Covers /options, /verify and the usernameless variants. Registration
+  // (/auth/webauthn/register/*) is authenticated and deliberately not listed.
+  "/auth/webauthn/login",
+];
+
+const isPublicAuthEndpoint = (url: string | undefined): boolean => {
+  if (!url) return false;
+
+  const path = url.split("?")[0].replace(/\/$/, "");
+
+  return PUBLIC_AUTH_PATHS.some((publicPath) => path === publicPath || path.startsWith(`${publicPath}/`));
+};
+
 type RefreshTokensData = {
   accessToken: string;
   refreshToken: string;
@@ -66,9 +99,13 @@ apiClient.interceptors.response.use(
     logApiError(error);
 
     const originalRequest = error.config as RetryableConfig | undefined;
-    const isAuthEndpoint = originalRequest?.url?.includes("/auth/");
 
-    if (!isAccessTokenError(error) || !originalRequest || originalRequest._retry || isAuthEndpoint) {
+    if (
+      !isAccessTokenError(error) ||
+      !originalRequest ||
+      originalRequest._retry ||
+      isPublicAuthEndpoint(originalRequest.url)
+    ) {
       return Promise.reject(error);
     }
 

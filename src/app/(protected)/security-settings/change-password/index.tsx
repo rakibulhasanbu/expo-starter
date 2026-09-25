@@ -1,4 +1,8 @@
-import { useChangePasswordMutation } from "@/features/settings/hooks/use-settings-mutations";
+import { useCurrentUserQuery } from "@/features/auth/hooks/use-auth-queries";
+import {
+  useChangePasswordMutation,
+  useSetPasswordMutation,
+} from "@/features/settings/hooks/use-settings-mutations";
 import { useToastStore } from "@/store/toast-store";
 import { getErrorMessage } from "@/utils/get-error-message";
 import { safeBack } from "@/utils/safe-back";
@@ -27,7 +31,103 @@ const changePasswordSchema = z
 
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
+const setPasswordSchema = z.object({
+  newPassword: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+type SetPasswordFormValues = z.infer<typeof setPasswordSchema>;
+
+const Screen = ({ children }: { children: React.ReactNode }) => (
+  <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background">
+    <View className="px-5 pt-10">
+      <BackButton
+        className="size-[45px] items-center justify-center rounded-full bg-secondary"
+        fallbackHref="/(protected)/security-settings"
+      />
+    </View>
+    {children}
+  </SafeAreaView>
+);
+
+/**
+ * Accounts created through Google or a passkey have no password, and
+ * change-password rejects them (it needs a current one to verify). `hasPassword`
+ * on /users/me is what tells the two cases apart.
+ */
 export default function ChangePasswordScreen() {
+  const { data: user, isPending } = useCurrentUserQuery();
+
+  if (isPending) return <Screen>{null}</Screen>;
+
+  return user?.hasPassword === false ? <SetPasswordForm /> : <ChangePasswordForm />;
+}
+
+function SetPasswordForm() {
+  const setPasswordMutation = useSetPasswordMutation();
+
+  const {
+    control,
+    handleSubmit,
+    formState: { isValid },
+  } = useForm<SetPasswordFormValues>({
+    resolver: zodResolver(setPasswordSchema),
+    mode: "onChange",
+    defaultValues: { newPassword: "" },
+  });
+
+  const onSubmit = (values: SetPasswordFormValues) => {
+    setPasswordMutation.mutate(values, {
+      onSuccess: () => {
+        useToastStore.getState().show("success", "Password set successfully");
+        safeBack("/(protected)/security-settings");
+      },
+      onError: (error) => {
+        useToastStore.getState().show("error", getErrorMessage(error));
+      },
+    });
+  };
+
+  return (
+    <Screen>
+      <FormScreen
+        contentContainerClassName="gap-8 px-5 pb-8 pt-10"
+        footer={
+          <Button
+            size="xl"
+            disabled={!isValid || setPasswordMutation.isPending}
+            loading={setPasswordMutation.isPending}
+            onPress={handleSubmit(onSubmit)}
+          >
+            <Text>Set password</Text>
+          </Button>
+        }
+      >
+        <View className="gap-2">
+          <Text className="font-urbanist-bold text-2xl tracking-[-0.25px] text-foreground">
+            Set Password
+          </Text>
+          <Text className="text-base text-subtitle">
+            You signed up without a password. Set one to be able to sign in with your email address
+            as well.
+          </Text>
+        </View>
+
+        <View className="gap-4">
+          <FormInput
+            control={control}
+            name="newPassword"
+            label="Password"
+            type="password"
+            placeholder="Enter password"
+            icon={<LockIcon size={20} />}
+          />
+        </View>
+      </FormScreen>
+    </Screen>
+  );
+}
+
+function ChangePasswordForm() {
   const changePasswordMutation = useChangePasswordMutation();
 
   const {
@@ -53,14 +153,7 @@ export default function ChangePasswordScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-background">
-      <View className="px-5 pt-10">
-        <BackButton
-          className="size-[45px] items-center justify-center rounded-full bg-secondary"
-          fallbackHref="/(protected)/security-settings"
-        />
-      </View>
-
+    <Screen>
       <FormScreen
         contentContainerClassName="gap-8 px-5 pb-8 pt-10"
         footer={
@@ -98,6 +191,6 @@ export default function ChangePasswordScreen() {
           />
         </View>
       </FormScreen>
-    </SafeAreaView>
+    </Screen>
   );
 }

@@ -1,6 +1,7 @@
 import { TermsCheckbox } from "@/features/auth/components/terms-checkbox";
 import { useSignUpMutation } from "@/features/auth/hooks/use-auth-mutations";
 import { getErrorMessage } from "@/utils/get-error-message";
+import { getAccountDeletionGraceEndsAt, isAccountPendingDeletion } from "@/utils/get-error-code";
 import { Ionicons } from "@expo/vector-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
@@ -67,6 +68,17 @@ export default function SignUp() {
             pathname: "/(auth)/sign-up/verify-email",
             params: { email: values.email },
           });
+        },
+        onError: (error) => {
+          // Signing up with the address of an account still inside its deletion
+          // grace period offers it back instead of dead-ending on "already exists".
+          if (isAccountPendingDeletion(error)) {
+            const graceEndsAt = getAccountDeletionGraceEndsAt(error);
+            router.push({
+              pathname: "/(auth)/reactivate-account",
+              params: { email: values.email, ...(graceEndsAt ? { graceEndsAt } : {}) },
+            });
+          }
         },
       }
     );

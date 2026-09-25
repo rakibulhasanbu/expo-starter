@@ -6,10 +6,20 @@ import { z } from "zod";
 // `env` from here instead of touching process.env directly.
 const envSchema = z.object({
   EXPO_PUBLIC_API_BASE_URL: z.url(),
+  // Google sign-in is optional — leave these unset and the button hides itself.
+  // The *web* client id must match the backend's GOOGLE_CLIENT_ID: the backend
+  // verifies the id token against that single audience, and an id token minted
+  // for a platform client id would carry a different `aud` and be rejected.
+  EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: z.string().optional(),
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: z.string().optional(),
+  EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse({
   EXPO_PUBLIC_API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL,
+  EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
 });
 
 if (!parsed.success) {
@@ -18,7 +28,13 @@ if (!parsed.success) {
 
 export const env = {
   apiBaseUrl: parsed.data.EXPO_PUBLIC_API_BASE_URL,
+  googleWebClientId: parsed.data.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  googleIosClientId: parsed.data.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+  googleAndroidClientId: parsed.data.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
 };
+
+/** Google sign-in needs at least the web client id to produce a token the backend accepts. */
+export const isGoogleSignInConfigured = !!env.googleWebClientId;
 
 // Values that live in app.json's `expo` block, surfaced at runtime via
 // Constants.expoConfig — centralized here so components don't reach into
